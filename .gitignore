@@ -1,0 +1,5 @@
+bin/
+lib/
+tests/bin
+
+*.swp
