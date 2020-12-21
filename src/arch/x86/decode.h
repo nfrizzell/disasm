@@ -10,6 +10,8 @@
 namespace ISet_x86
 {
 
+// "Linear" as opposed to recursive descent, which is the better but more complex and difficult
+// way of implementing a disassembler
 class LinearDecoder
 {
 public:
@@ -131,7 +133,7 @@ const std::map<AddrMethod, funcptr> addrMethodHandler
 	{ AddrMethod::X, MethodX },
 	{ AddrMethod::Y, MethodY },
 
-	{ AddrMethod::HARDCODED_REGISTER, MethodRegister }
+	//{ AddrMethod::HARDCODED_REGISTER, MethodRegister }
 };
 
 };

@@ -3,40 +3,40 @@
 namespace ISet_x86
 {
 
-const std::map<OperandType, std::string> regString
+const std::map<AddrMethod, std::string> regString
 {
-	{ OperandType::AH, "ah" },
-	{ OperandType::AL, "al" },
-	{ OperandType::AX, "ax" },
-	{ OperandType::EAX, "eax" },
-	{ OperandType::BH, "bh" },
-	{ OperandType::BL, "bl" },
-	{ OperandType::BX, "bx" },
-	{ OperandType::EBX, "ebx" },
-	{ OperandType::CH, "ch" },
-	{ OperandType::CL, "cl" },
-	{ OperandType::CX, "cx" },
-	{ OperandType::ECX, "ecx" },
-	{ OperandType::DH, "dh" },
-	{ OperandType::DL, "dl" },
-	{ OperandType::DX, "dx" },
-	{ OperandType::EDX, "edx" },
-	{ OperandType::SI, "si" },
-	{ OperandType::ESI, "esi" },
-	{ OperandType::DI, "di" },
-	{ OperandType::EDI, "edi" },
-	{ OperandType::BP, "bp" },
-	{ OperandType::EBP, "ebp" },
-	{ OperandType::SP, "sp" },
-	{ OperandType::ESP, "esp" },
-	{ OperandType::SS, "ss" },
-	{ OperandType::CS, "cs" },
-	{ OperandType::DS, "ds" },
-	{ OperandType::ES, "fs" },
-	{ OperandType::GS, "gs" },
-	{ OperandType::IP, "ip" },
-	{ OperandType::EIP, "eip" },
-	{ OperandType::EFLAGS, "eflags" }
+	{ AddrMethod::AH, "ah" },
+	{ AddrMethod::AL, "al" },
+	{ AddrMethod::AX, "ax" },
+	{ AddrMethod::EAX, "eax" },
+	{ AddrMethod::BH, "bh" },
+	{ AddrMethod::BL, "bl" },
+	{ AddrMethod::BX, "bx" },
+	{ AddrMethod::EBX, "ebx" },
+	{ AddrMethod::CH, "ch" },
+	{ AddrMethod::CL, "cl" },
+	{ AddrMethod::CX, "cx" },
+	{ AddrMethod::ECX, "ecx" },
+	{ AddrMethod::DH, "dh" },
+	{ AddrMethod::DL, "dl" },
+	{ AddrMethod::DX, "dx" },
+	{ AddrMethod::EDX, "edx" },
+	{ AddrMethod::SI, "si" },
+	{ AddrMethod::ESI, "esi" },
+	{ AddrMethod::DI, "di" },
+	{ AddrMethod::EDI, "edi" },
+	{ AddrMethod::BP, "bp" },
+	{ AddrMethod::EBP, "ebp" },
+	{ AddrMethod::SP, "sp" },
+	{ AddrMethod::ESP, "esp" },
+	{ AddrMethod::SS, "ss" },
+	{ AddrMethod::CS, "cs" },
+	{ AddrMethod::DS, "ds" },
+	{ AddrMethod::ES, "fs" },
+	{ AddrMethod::GS, "gs" },
+	{ AddrMethod::IP, "ip" },
+	{ AddrMethod::EIP, "eip" },
+	{ AddrMethod::EFLAGS, "eflags" }
 };
 
 Translator::Translator(std::vector<Instruction> decodedInstrs)
@@ -79,7 +79,7 @@ void Translator::StringifyOperand(std::string &line, const Instruction &instr, c
 
 	if (op.attrib.runtime.isRegister)
 	{
-		opStr = regString.at(static_cast<OperandType>(op.value));
+		opStr = regString.at(op.attrib.runtime.regValue);
 	}
 	
 	if (op.attrib.runtime.isAddress)

@@ -1,11 +1,14 @@
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
 
 #include "instruction.h"
 
 namespace ISet_x86
 {
 
+// If a type is not listed here, it is because it is either hard to find information on or is
+// simply not yet implemented
 std::map<OperandType, uint8_t> typeSize16
 {
 	{OperandType::a, 4},
@@ -25,6 +28,8 @@ std::map<OperandType, uint8_t> typeSize16
 	{OperandType::x, 8}, 
 	{OperandType::y, 4}, 
 	{OperandType::z, 2},	
+	// Possibly not needed as registers have a specified size as well using the new method I'm using
+	/*
 	{OperandType::AH, 2},
 	{OperandType::AL, 2},
 	{OperandType::AX, 2},
@@ -58,8 +63,11 @@ std::map<OperandType, uint8_t> typeSize16
 	{OperandType::IP, 2},
 	{OperandType::EIP, 4},
 	{OperandType::EFLAGS, 2}
+	*/
 };
 
+// If a type is not listed here, it is because it is either hard to find information on or is
+// simply not yet implemented
 std::map<OperandType, uint8_t> typeSize32
 {
 	{OperandType::a, 8},
@@ -79,6 +87,8 @@ std::map<OperandType, uint8_t> typeSize32
 	{OperandType::x, 16}, 
 	{OperandType::y, 8}, 
 	{OperandType::z, 8},	
+	// Possibly not needed as registers have a specified size as well using the new method I'm using
+	/*
 	{OperandType::AH, 2},
 	{OperandType::AL, 2},
 	{OperandType::AX, 2},
@@ -112,65 +122,59 @@ std::map<OperandType, uint8_t> typeSize32
 	{OperandType::IP, 2},
 	{OperandType::EIP, 4},
 	{OperandType::EFLAGS, 2}
+	*/
 };
 
 // Defined values of the REG field of the ModR/M byte if the data is 8 bits
-const std::map<int, OperandType> ModRMRegisterEncoding8
+const std::map<int, AddrMethod> ModRMRegisterEncoding8
 {
-	{ 0b000, OperandType::AL },
-	{ 0b001, OperandType::CL },
-	{ 0b010, OperandType::DL },
-	{ 0b011, OperandType::BL },
-	{ 0b100, OperandType::AH },
-	{ 0b101, OperandType::CH },
-	{ 0b110, OperandType::DH },
-	{ 0b111, OperandType::BH }
+	{ 0b000, AddrMethod::AL },
+	{ 0b001, AddrMethod::CL },
+	{ 0b010, AddrMethod::DL },
+	{ 0b011, AddrMethod::BL },
+	{ 0b100, AddrMethod::AH },
+	{ 0b101, AddrMethod::CH },
+	{ 0b110, AddrMethod::DH },
+	{ 0b111, AddrMethod::BH }
 };
 
 // Defined values of the REG field of the ModR/M byte if the data is 16 bits
-const std::map<int, OperandType> ModRMRegisterEncoding16
+const std::map<int, AddrMethod> ModRMRegisterEncoding16
 {
-	{ 0b000, OperandType::AX },
-	{ 0b001, OperandType::CX },
-	{ 0b010, OperandType::DX },
-	{ 0b011, OperandType::BX },
-	{ 0b100, OperandType::SP },
-	{ 0b101, OperandType::BP },
-	{ 0b110, OperandType::SI },
-	{ 0b111, OperandType::DI }
+	{ 0b000, AddrMethod::AX },
+	{ 0b001, AddrMethod::CX },
+	{ 0b010, AddrMethod::DX },
+	{ 0b011, AddrMethod::BX },
+	{ 0b100, AddrMethod::SP },
+	{ 0b101, AddrMethod::BP },
+	{ 0b110, AddrMethod::SI },
+	{ 0b111, AddrMethod::DI }
 };
 
 // Defined values of the REG field of the ModR/M byte if the data is 32 bits
-const std::map<int, OperandType> ModRMRegisterEncoding32
+const std::map<int, AddrMethod> ModRMRegisterEncoding32
 {
-	{ 0b000, OperandType::EAX },
-	{ 0b001, OperandType::ECX },
-	{ 0b010, OperandType::EDX },
-	{ 0b011, OperandType::EBX },
-	{ 0b100, OperandType::ESP },
-	{ 0b101, OperandType::EBP },
-	{ 0b110, OperandType::ESI },
-	{ 0b111, OperandType::EDI }
+	{ 0b000, AddrMethod::EAX },
+	{ 0b001, AddrMethod::ECX },
+	{ 0b010, AddrMethod::EDX },
+	{ 0b011, AddrMethod::EBX },
+	{ 0b100, AddrMethod::ESP },
+	{ 0b101, AddrMethod::EBP },
+	{ 0b110, AddrMethod::ESI },
+	{ 0b111, AddrMethod::EDI }
 };
 
-const std::map<int, int> SIBScaleFactor
-{
-	{0b00, 1},
-	{0b01, 2},
-	{0b10, 4},
-	{0b11, 8}
-};
+// Aliases since these use the same mappings
+const std::map<int, AddrMethod> SIBIndex = ModRMRegisterEncoding32;
+const std::map<int, AddrMethod> SIBBase = ModRMRegisterEncoding32;
 
-const std::map<int, OperandType> SIBIndex = ModRMRegisterEncoding32;
-const std::map<int, OperandType> SIBBase = ModRMRegisterEncoding32;
-
+// Used to figure out what entry the encoded instruction maps to
 bool Opcode::operator==(const Opcode &rhs) const
 {
 	return (mandatoryPrefix == rhs.mandatoryPrefix &&
 		twoByte == rhs.twoByte && 
 		primary == rhs.primary && 
-		secondary == rhs.secondary &&
-		weight == rhs.weight);
+		secondary == rhs.secondary);
 }
 
 bool Opcode::operator<(const Opcode &rhs) const
@@ -180,7 +184,6 @@ bool Opcode::operator<(const Opcode &rhs) const
 	ret = (primary < rhs.primary) ? true : ret;
 	ret = (!twoByte && rhs.twoByte) ? true : ret;
 	ret = (secondary < rhs.secondary) ? true : ret;
-	ret = (weight < rhs.weight) ? true : ret;
 
 	return ret;
 }
@@ -213,6 +216,8 @@ void Operand::UpdateSize(std::array<byte, 4> &prefixes)
 	attrib.intrinsic.size = is32 ? typeSize32.at(attrib.intrinsic.type) : typeSize16.at(attrib.intrinsic.type);
 }
 
+// After retrieving the reference attribute from the reference set, update the current instruction that
+// is being constructed's attributes
 void Instruction::UpdateAttributes(const Instruction &reference)
 {
 	attrib.intrinsic = reference.attrib.intrinsic;
@@ -233,7 +238,6 @@ void Instruction::UpdateAttributes(const Instruction &reference)
 	op4.attrib.intrinsic = reference.op4.attrib.intrinsic;
 	op4.attrib.runtime.isRegister = reference.op4.attrib.runtime.isRegister;
 	op4.UpdateSize(encoded.prefix);
-	
 }
 
 void Instruction::InterpretModRMByte(const byte modrmByte)
@@ -302,12 +306,12 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 		attrib.runtime.hasDisplacement = false;
 		if (op1.attrib.intrinsic.size < 2 ) // 8 bit operand 
 		{
-			activeOperand->value = ModRMRegisterEncoding8.at(*operandField);
+			activeOperand->attrib.runtime.regValue = ModRMRegisterEncoding8.at(*operandField);
 		}
 		
 		else // Default to 32-bit for now
 		{
-			activeOperand->value = ModRMRegisterEncoding32.at(*operandField);
+			activeOperand->attrib.runtime.regValue = ModRMRegisterEncoding32.at(*operandField);
 		}
 	}
 }
@@ -322,7 +326,7 @@ void Instruction::InterpretSIBByte(byte sibByte)
 	encoded.sib.baseBits  = (sibByte & 0b00000111);
 
 	// Scale
-	op2.attrib.runtime.sibScaleFactor = SIBScaleFactor.at(encoded.sib.scaleBits);
+	op2.attrib.runtime.sibScaleFactor = std::pow(2, encoded.sib.scaleBits);
 
 	// Index
 	if (encoded.sib.indexBits == 0b100)
@@ -348,13 +352,27 @@ void Instruction::InterpretSIBByte(byte sibByte)
 	else if (encoded.sib.baseBits == 0b101 && (encoded.modrm.modBits == 0b10 && encoded.modrm.modBits == 0b01))
 	// EBP
 	{
-		op2.value = OperandType::EBP;
+		op2.attrib.runtime.regValue = AddrMethod::EBP;
 	}
 
 	else
 	{
-		op2.value = SIBBase.at(encoded.sib.baseBits);
+		op2.attrib.runtime.regValue = SIBBase.at(encoded.sib.baseBits);
 	}
 }
 
+std::ostream & operator<<(std::ostream &out, const Instruction &instr)
+{
+	out << std::hex << "mnem:" << '\t' << instr.attrib.intrinsic.mnemonic << '\n' 
+	<< "prefix:" << '\t' << instr.encoded.opcode.mandatoryPrefix << '\n' 
+	<< "2byte:" << '\t' << (int)instr.encoded.opcode.twoByte << '\n' 
+	<< "popcd:" << '\t' << instr.encoded.opcode.primary << '\n' 
+	<< "sopcd:" << '\t' << instr.encoded.opcode.secondary << '\n' 
+	<< "opext:" << '\t' << (int)instr.encoded.opcode.extension << '\n';
+
+	return out;
+}
+
 };
+
+

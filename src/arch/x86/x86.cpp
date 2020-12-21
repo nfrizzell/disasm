@@ -19,8 +19,10 @@ Arch_x86::Arch_x86(const std::map<std::string, std::vector<byte>> * segment)
 std::vector<std::string> Arch_x86::TranslateToAssembly()
 {
 	assembly = std::vector<std::string>();
+
 	for (auto section : (*segment))
 	{
+		
 		if (section.first == ".init")
 		{
 			auto decoder = LinearDecoder(&section.second);

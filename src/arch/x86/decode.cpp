@@ -375,7 +375,7 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 		instr.encoded.immd[i] = context->CurrentByte();
 	}
 	
-	instr.activeOperand->value = OperandType::IMMD;
+	instr.activeOperand->attrib.runtime.isImmd = true;
 	context->ChangeState(Operands);
 }
 
@@ -465,8 +465,8 @@ void MethodY(LinearDecoder * context, Instruction &instr)
 
 void MethodRegister(LinearDecoder * context, Instruction &instr)
 {
-	OperandType reg = instr.activeOperand->attrib.intrinsic.type;
-	instr.activeOperand->value = reg;
+	instr.activeOperand->attrib.runtime.isRegister = true;
+
 	context->ChangeState(Operands);
 }
 

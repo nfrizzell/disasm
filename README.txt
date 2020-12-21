@@ -1,1 +1,3 @@
-This is a work-in-progress x64 and x86 disassembler. In the future I would like to add support for more instruction sets as well.
+This is a work-in-progress x64 and x86 disassembler.
+
+Credit to x86asm.net (ref.x86asm.net/index.html) for providing the reference XML file used.

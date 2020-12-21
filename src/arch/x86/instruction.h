@@ -5,7 +5,6 @@
 #include <map>
 
 #include "../../util/common.h"
-#include "../../util/safebool.h"
 
 namespace ISet_x86
 {
@@ -37,7 +36,11 @@ const std::vector<byte> prefixes
 	0x67		// Address-size modifier
 };
 
-enum class AddrMethod : int8_t
+// The range that register types fall into in the enum
+const int REGISTER_LOWER_BOUND = 100;
+const int REGISTER_UPPER_BOUND = 2000;
+
+enum class AddrMethod : int16_t
 // These are the operand addressing methods as outlined in section A.2.1 of the 
 // Intel x86 software developer's manual
 // Commented-out values are those that are in the documentation but not used here
@@ -65,10 +68,12 @@ enum class AddrMethod : int8_t
 	L =10, // The upper 4 bits of the 8 bit immediate encode an XMM or YMM register
 	M =11, // The ModR/M byte may refer only to memory
 	N =12, // The R/M field of the ModR/M byte encodes a packed-quadword MMX register
-	O =13, // No ModR/M byte, the offset of the operand is encoded as a word/dword in 			 // the instruction
+	O =13, // No ModR/M byte, the offset of the operand is encoded as a word/dword in 			 
+		// the instruction
 	P =14, // The reg field of the ModR/M byte encodes a packed quadword MMX register
 
-	Q =15, // The ModR/M byte specifies the operand, which is either an MMX register			 // or a memory address. If it is a memory address, the address is computed
+	Q =15, // The ModR/M byte specifies the operand, which is either an MMX register			 
+		// or a memory address. If it is a memory address, the address is computed
 	       // from a segment register and:
 	       //       - a base register
 	       //       - an index register
@@ -97,18 +102,41 @@ enum class AddrMethod : int8_t
 	BA=24,
 	BB=25,
 	BD=26,
-	ES=27,
+	ES_=27,
 	EST=28,
 	SC=29,
+	T=30,
+
+	HARDCODED_VALUE = 100,
+
+	// General-purpose registers
+	AH = 101, AL = 102, AX = 103, EAX = 104,
+	BH = 201, BL = 202, BX = 203, EBX = 204,
+	CH = 301, CL = 302, CX = 303, ECX = 304,
+	DH = 401, DL = 402, DX = 403, EDX = 404,
+	// Pointer registers
+	SI = 501, ESI = 502,
+	DI = 601, EDI = 602,
+	BP = 701, EBP = 702,
+	SP = 801, ESP = 802,
+	// Segment registers
+	SS = 901, CS = 902, DS = 903, ES = 904, FS = 905, GS = 906,
+	// Instruction pointer
+	IP = 1001, EIP = 1002,
+	// EFLAGS register
+	EFLAGS = 1101,
 	
-	HARDCODED_REGISTER = 100,
-	HARDCODED_VALUE = 101,
-	X87_STACK = 102
+	// FPU/x87 stack
+	X87_STACK_TOP = 1201,
+	X87_STACK_1 = 1202,
+	X87_STACK_2 = 1203,
+	X87_STACK_3 = 1204, 
+	X87_STACK_4 = 1205, 
+	X87_STACK_5 = 1206, 
+	X87_STACK_6 = 1207,
+	X87_STACK_7 = 1208
 };
 
-// The range that register types fall into in the enum
-const int REGISTER_LOWER_BOUND = 100;
-const int REGISTER_UPPER_BOUND = 2000;
 
 enum class OperandType : int16_t
 {
@@ -136,6 +164,13 @@ enum class OperandType : int16_t
 	z =19, // Word for 16-bit operand-size or doubleword for 32/64-bit operand-size
 
 	// Extended operand types
+	/* 
+	Some of these may not be intuitively in order. Don't pay too much attention to the numbers themselves,
+        they are just magic numbers that are used to identify each possible attribute and have no actual
+        meaning beyond this. If you want to know what each attribute represents, the names match those
+        used in relevant documentation.
+	*/
+
 	bcd=20,
 	bs=21,
 	bsq=22,
@@ -164,6 +199,7 @@ enum class OperandType : int16_t
 	do_=45,
 	qa=46,
 	qs=47,
+	vq=48,
 
 	// General-purpose registers
 	AH = 101, AL = 102, AX = 103, EAX = 104,
@@ -194,7 +230,8 @@ enum class OperandType : int16_t
 
 	// Other special types
 	IMMD = 2001, // Immediate value
-	HARDCODED_VALUE = 2101 //  For instructions that have intrinsic constant operands
+	HARDCODED_VALUE = 2101, //  For instructions that have intrinsic constant operands
+	UNSUPPORTED = 2201 // Complex instructions that don't fit the usual form
 };
 
 struct Opcode
@@ -218,15 +255,11 @@ struct Opcode
 
 	} fields {};
 
-	int8_t weight {}; // Tiebreaker when all other attributes are equal
-
 	bool operator==(const Opcode &rhs) const;
 	bool operator<(const Opcode &rhs) const;
 };
 
 class Operand
-// Operand value will be of one of two types: a numeric value (int) or a register enum
-// value. Regardless of the type of the operand value, it will always be returned as int.
 {
 public:
 	struct OperandAttributes
@@ -241,20 +274,20 @@ public:
 
 		struct Runtime
 		{
-			bool isAddress {}; // If an operand is a memory address
-			SafeBool isRegister {}; // If operand is a hardcoded/encoded register
+			bool isAddress {}; // If an operand value is a memory address
+			bool isRegister {}; // If operand value is a hardcoded/encoded register
+			bool isImmd {}; // If the operand value is immediate data
 			uint8_t opcodeLength {};
+			// If the operand is a register, the register used will be stored here
+			AddrMethod regValue {};
 
 			// Applicable to SIB mode only
 			uint8_t sibScaleFactor {}; // Size of optional SIB scale factor (1/2/4/8)
-			OperandType sibCompliment {OperandType::NOT_APPLICABLE}; // SIB index reg
+			AddrMethod sibCompliment {AddrMethod::NOT_APPLICABLE}; // SIB index reg
 
 		} runtime {};
 
 	} attrib {};
-
-	// The type of the value the operand holds and not the type of the operand
-	OperandType value {OperandType::NOT_APPLICABLE};
 	
 	void UpdateSize(std::array<byte, 4> &prefixes);
 };
@@ -270,21 +303,27 @@ public:
 			// First processor the instruction was supported by 
 			std::string firstAppearance {"UNRESOLVED"};
 			std::string documentationStatus {"UNRESOLVED"};
-			int8_t operationMode {INVALID};
-			int8_t ringLevel {INVALID};
-			int8_t lockAndFPU {INVALID};
+			char operationMode {INVALID};
+			char ringLevel {INVALID};
+			bool lock {false};
+			bool fpush {false};		
+			bool fpop {false};		
+			std::string alias {"UNRESOLVED"};
 			std::string iext {"UNRESOLVED"};
 			std::string group1 {"UNRESOLVED"};
 			std::string group2 {"UNRESOLVED"};
 			std::string group3 {"UNRESOLVED"};
 
-			int16_t testedFlags {INVALID};
-			int16_t modifiedFlags {INVALID};
-			int16_t definedFlags {INVALID};
-			int16_t undefinedFlags {INVALID};
-			int16_t flagValues {INVALID};
+			std::string testedFlags {"UNRESOLVED"};
+			std::string modifiedFlags {"UNRESOLVED"};
+			std::string definedFlags {"UNRESOLVED"};
+			std::string undefinedFlags {"UNRESOLVED"};
+			std::string flagValues {"UNRESOLVED"};
 
-			std::string description {"UNRESOLVED"};
+			bool x86Exclusive {false};
+			bool x64Exclusive {false};
+
+			std::string brief {"UNRESOLVED"};
 
 		} intrinsic {};
 
@@ -296,13 +335,13 @@ public:
 			uint8_t opcodeLength {}; // Not including mandatory prefix
 			uint8_t displacementSize {}; // Size of displacement in bytes  
 
-			SafeBool resolved {}; // If the instruction has been successfully read
-			bool hasSIB {};
-			bool hasDisplacement {};
-			bool op1Read {}; // Check if op1 has been read before op2
-			bool op2Read {}; // Check if op1 has been read before op2
-			bool modRMRead {};
-			bool sibRead {};
+			bool resolved {false}; // If the instruction has been successfully read
+			bool hasSIB {false};
+			bool hasDisplacement {false};
+			bool op1Read {false}; // Check if op1 has been read before op2
+			bool op2Read {false}; // Check if op1 has been read before op2
+			bool modRMRead {false};
+			bool sibRead {false};
 
 		} runtime {};
 
@@ -345,6 +384,8 @@ public:
 	void InterpretSIBByte(const byte sibByte);
 
 	void UpdateAttributes(const Instruction &reference);
+
+	friend std::ostream & operator<<(std::ostream &out, const Instruction &instr);
 
 private:
 	// Gives either a 16-bit or 32-bit register based on the presence of the 0x67 prefix
