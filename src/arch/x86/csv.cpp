@@ -158,7 +158,7 @@ Instruction ParseCSVLine(std::string line)
 				instr.encoded.opcode.fields.memoryFormat = ParseAsValue(field, 2);
 				break;
 			case CSV_COLUMNS::OPCD_EXT:
-				instr.encoded.opcode.extension = ParseAsValue(field);
+				instr.encoded.opcode.extension = ParseAsValue(field, 10);
 				break;
 			case CSV_COLUMNS::MODE:
 				instr.attrib.intrinsic.operationMode = ParseAsChar(field);
@@ -278,10 +278,10 @@ void x86CSVParse(InstructionReference &instrReference)
 	for (auto line : csvLines)
 	{
 		auto instr = ParseCSVLine(line);
-
 		if (instrReference.count(instr.encoded.opcode) == 0)
 		{
-			instrReference.Emplace(instr.encoded.opcode, instr);
+			auto opkey {instr.encoded.opcode};
+			instrReference.Emplace(opkey, instr);
 		}
 	}
 }

@@ -98,9 +98,9 @@ void LinearDecoder::ChangeState(funcptr newState)
 	state = newState;		
 }
 
-bool InstructionReference::Contains(Opcode opcode)
+bool InstructionReference::Contains(Opcode opkey)
 {
-	return reference.find(opcode) != reference.end();
+	return reference.find(opkey) != reference.end();
 }
 
 bool InstructionReference::ContainsPrimary(byte b)
@@ -116,24 +116,38 @@ bool InstructionReference::ContainsPrimary(byte b)
 	return false;
 }
 
-Instruction InstructionReference::GetReference(Opcode opcode)
+Instruction InstructionReference::GetReference(Opcode opkey)
 {
-	if (reference.count(opcode) > 0)
+	if (reference.find(opkey) != reference.end())
 	{
-		return reference.at(opcode);
+		std::cout << reference.at(opkey) << '\n';
+		return reference.at(opkey);
+	}
+
+	// Used for instructions which have an opcode extension, as otherwise
+	// they would not be located at this stage properly
+	auto copyWithOpcodeExtension = opkey;
+	copyWithOpcodeExtension.extension = 0;
+	//std::cout << copyWithOpcodeExtension << '\n';
+
+	if (reference.count(copyWithOpcodeExtension) > 0)
+	{
+		return reference.at(copyWithOpcodeExtension);
 	}
 
 	else
 	{
+		/*
 		std::stringstream err; 
-		err << std::hex << "Tried to lookup opcode that does not exist: " << opcode.mandatoryPrefix << " " << (int)opcode.twoByte << " " << opcode.primary << " " << opcode.secondary << " " << (int)opcode.extension;
+		err << std::hex << "Tried to lookup opcode that does not exist: " << opkey.mandatoryPrefix << " " << (int)opkey.twoByte << " " << opkey.primary << " " << opkey.secondary << " " << (int)opkey.extension;
 		throw std::runtime_error(err.str());
+		*/
 	}
 }
 
-void InstructionReference::Emplace(Opcode opcode, Instruction instruction)
+void InstructionReference::Emplace(Opcode opkey, Instruction instruction)
 {
-	reference.emplace(opcode, instruction);
+	reference.emplace(opkey, instruction);
 }
 
 funcptr AddrMethodHandler::at(AddrMethod method)
@@ -199,11 +213,8 @@ void Prefix(LinearDecoder * context, Instruction &instr)
 	}
 }
 
-// Assumes the two-byte flag (0x0F) is present, since all three-byte opcodes will have it
-// TBD
-const std::vector<int> threeByteOpcodes
-{
-};
+// I don't remember what I was doing with this
+std::vector<uint8_t> threeByteOpcodes {};
 
 void Opcode(LinearDecoder * context, Instruction &instr)
 { 

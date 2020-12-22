@@ -93,16 +93,16 @@ private:
 class InstructionReference
 {
 public:
-	bool Contains(Opcode opcode);
+	bool Contains(Opcode opkey);
 	bool ContainsPrimary(byte b);
-	Instruction GetReference(Opcode opcode);
-	void Emplace(Opcode op, Instruction instr);
+	Instruction GetReference(Opcode opkey);
+	void Emplace(Opcode opkey, Instruction instr);
 	int size() { return reference.size(); }
 	int count(Opcode key) { return reference.count(key); }
 
 private:
 	// Loaded at runtime from the relevant .csv file
-	std::map<Opcode, Instruction> reference;
+	std::unordered_map<Opcode, Instruction, OpcodeHash> reference;
 };
 
 using namespace State_x86;	

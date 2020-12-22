@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <unordered_map>
 
 #include "../../util/common.h"
 
@@ -241,7 +242,7 @@ struct Opcode
 	int16_t primary {INVALID};
 	int16_t secondary {INVALID};
 	int8_t extension {INVALID};
-	
+
 	struct OpcodeFields
 	{
 		bool regEncoded {};
@@ -255,8 +256,13 @@ struct Opcode
 
 	} fields {};
 
+	friend std::ostream & operator<<(std::ostream &out, const Opcode &opcode);
 	bool operator==(const Opcode &rhs) const;
-	bool operator<(const Opcode &rhs) const;
+};
+
+struct OpcodeHash
+{
+	std::size_t operator()(const Opcode &op) const;
 };
 
 class Operand

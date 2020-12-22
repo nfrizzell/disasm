@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
+#include <sstream>
 
 #include "instruction.h"
 
@@ -211,18 +212,6 @@ bool Opcode::operator==(const Opcode &rhs) const
 		extension == rhs.extension);
 }
 
-bool Opcode::operator<(const Opcode &rhs) const
-{
-	bool ret = false;
-	ret = (mandatoryPrefix < rhs.mandatoryPrefix) ? true : ret;
-	ret = (primary < rhs.primary) ? true : ret;
-	ret = (!twoByte && rhs.twoByte) ? true : ret;
-	ret = (secondary < rhs.secondary) ? true : ret;
-	ret = (extension < rhs.extension) ? true : ret;
-
-	return ret;
-}
-
 void Operand::UpdateSize(std::array<byte, 4> &prefixes)
 {
 	if (attrib.intrinsic.type == OperandType::NOT_APPLICABLE)
@@ -249,6 +238,15 @@ void Operand::UpdateSize(std::array<byte, 4> &prefixes)
 
 	bool is32 = addrSizePrefix || operandSizePrefix;
 	attrib.intrinsic.size = is32 ? typeSize32.at(attrib.intrinsic.type) : typeSize16.at(attrib.intrinsic.type);
+}
+
+std::size_t OpcodeHash::operator()(const Opcode &op) const
+{
+	auto ss = std::stringstream();
+
+	ss << op.mandatoryPrefix << (int)op.twoByte << op.primary << op.secondary << op.extension;
+
+	return std::hash<std::string>()(ss.str());
 }
 
 // After retrieving the reference attribute from the reference set, update the current instruction that
@@ -404,6 +402,17 @@ std::ostream & operator<<(std::ostream &out, const Instruction &instr)
 	<< "popcd:" << '\t' << instr.encoded.opcode.primary << '\n' 
 	<< "sopcd:" << '\t' << instr.encoded.opcode.secondary << '\n' 
 	<< "opext:" << '\t' << (int)instr.encoded.opcode.extension << '\n';
+
+	return out;
+}
+
+std::ostream & operator<<(std::ostream &out, const Opcode &opcode)
+{
+	out << std::hex << "prefix:" << '\t' << opcode.mandatoryPrefix << '\n' 
+	<< "2byte:" << '\t' << (int)opcode.twoByte << '\n' 
+	<< "popcd:" << '\t' << opcode.primary << '\n' 
+	<< "sopcd:" << '\t' << opcode.secondary << '\n' 
+	<< "opext:" << '\t' << (int)opcode.extension << '\n';
 
 	return out;
 }
