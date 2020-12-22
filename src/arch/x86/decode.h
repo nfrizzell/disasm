@@ -144,7 +144,7 @@ private:
 		{ AddrMethod::X, MethodX },
 		{ AddrMethod::Y, MethodY },
 
-		{ AddrMethod::Z, MethodUnimplemented },
+		{ AddrMethod::Z, MethodZ },
 		{ AddrMethod::BA, MethodUnimplemented },
 		{ AddrMethod::BB, MethodUnimplemented },
 		{ AddrMethod::BD, MethodUnimplemented },

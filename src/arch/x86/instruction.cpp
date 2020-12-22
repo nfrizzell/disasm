@@ -255,6 +255,7 @@ void Instruction::UpdateAttributes(const Instruction &reference)
 {
 	attrib.intrinsic = reference.attrib.intrinsic;
 	attrib.runtime.opcodeLength = reference.attrib.runtime.opcodeLength;
+	encoded.opcode.extension = reference.encoded.opcode.extension;
 
 	op1.attrib.intrinsic = reference.op1.attrib.intrinsic;
 	op1.attrib.runtime.isRegister = reference.op1.attrib.runtime.isRegister;

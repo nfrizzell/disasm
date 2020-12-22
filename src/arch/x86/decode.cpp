@@ -120,7 +120,6 @@ Instruction InstructionReference::GetReference(Opcode opkey)
 {
 	if (reference.find(opkey) != reference.end())
 	{
-		std::cout << reference.at(opkey) << '\n';
 		return reference.at(opkey);
 	}
 
@@ -128,7 +127,6 @@ Instruction InstructionReference::GetReference(Opcode opkey)
 	// they would not be located at this stage properly
 	auto copyWithOpcodeExtension = opkey;
 	copyWithOpcodeExtension.extension = 0;
-	//std::cout << copyWithOpcodeExtension << '\n';
 
 	if (reference.count(copyWithOpcodeExtension) > 0)
 	{
@@ -137,11 +135,9 @@ Instruction InstructionReference::GetReference(Opcode opkey)
 
 	else
 	{
-		/*
 		std::stringstream err; 
 		err << std::hex << "Tried to lookup opcode that does not exist: " << opkey.mandatoryPrefix << " " << (int)opkey.twoByte << " " << opkey.primary << " " << opkey.secondary << " " << (int)opkey.extension;
 		throw std::runtime_error(err.str());
-		*/
 	}
 }
 
@@ -256,6 +252,7 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 
 		// Update the instruction based upon the common attributes inferred from opcode
 		const Instruction reference = instrReference.GetReference(instr.encoded.opcode);
+		//std::cout << (int)reference.op3.attrib.intrinsic.type << '\n';
 		instr.UpdateAttributes(reference);
 
 		context->ChangeState(Operands);
@@ -512,6 +509,11 @@ void MethodY(LinearDecoder * context, Instruction &instr)
 {
 	context->ChangeState(Operands);
 
+}
+
+void MethodZ(LinearDecoder * context, Instruction &instr)
+{
+	context->ChangeState(Operands);
 }
 
 void MethodRegister(LinearDecoder * context, Instruction &instr)
