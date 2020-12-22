@@ -13,7 +13,7 @@ all_unique_attrib_keys = [
 		'tttn', 'mod', 'doc_ref', 'doc64_ref', 'ring', 'alias', 'mem_format', 
 		'fpop', 'fpush', 'lat_step', 'part_alias', '{http://www.w3.org/XML/1998/namespace}id',
 		'group', 'escape', 'lock', 'exclusive', 'version', 'value', 'displayed',
-		'is_undoc', 'is_doc', 'particular', 'ring_ref', 'doc_part_alias_ref', 'id'
+		'is_undoc', 'is_doc', 'particular', 'ring_ref', 'doc_part_alias_ref', 'id', "+r"
 		]
 
 all_unique_child_tags = [
@@ -146,9 +146,22 @@ def parse_all_unique_entries(root, twobyte, unique_entries):
 
 				entry.properties['pri_opcd'] = opcode
 				entry.properties['twobyte'] = twobyte
+				rplus_key = (twobyte, entry.properties['pri_opcd'])
 
 				if len(entry.properties['grp1']) > 0 and entry.properties['grp1'][0] == 'prefix':
 					pass
+
+				# This section is used to find and duplicate weird instructions that have different opcodes based on 
+				# what register they are supposed to access (this method of addressing goes by 'Z' in the reference).
+				# These instructions are given the field tag "+r" in the web reference, but this does not exist
+				# in the XML reference for some reason, so I figured this is the best way to make up for it.
+				elif rplus_key in [(False, '40'), (False, '48'), (False, '50'), (False, '58'), (False, '90'), (False, 'B0'), (False, 'B8'), (True, 'C8')]:
+					for i in range(8):
+						cop = copy.deepcopy(entry)
+						new_opcd = int(entry.properties['pri_opcd'], 16)+i
+						cop.properties['pri_opcd'] = "{:02x}".format(new_opcd)
+						unique_entries.append(cop)
+
 				else:
 					unique_entries.append(entry)
 

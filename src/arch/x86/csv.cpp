@@ -223,28 +223,28 @@ Instruction ParseCSVLine(std::string line)
 				instr.attrib.intrinsic.brief = field;
 				break;
 			case CSV_COLUMNS::OP1_M:
-				instr.op1.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field));
+				instr.op1.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field), 10);
 				break;
 			case CSV_COLUMNS::OP1_T:
-				instr.op1.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field));
+				instr.op1.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field), 10);
 				break;
 			case CSV_COLUMNS::OP2_M:
-				instr.op2.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field));
+				instr.op2.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field), 10);
 				break;
 			case CSV_COLUMNS::OP2_T:
-				instr.op2.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field));
+				instr.op2.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field), 10);
 				break;
 			case CSV_COLUMNS::OP3_M:
-				instr.op3.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field));
+				instr.op3.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field), 10);
 				break;
 			case CSV_COLUMNS::OP3_T:
-				instr.op3.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field));
+				instr.op3.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field), 10);
 				break;
 			case CSV_COLUMNS::OP4_M:
-				instr.op4.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field));
+				instr.op4.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field), 10);
 				break;
 			case CSV_COLUMNS::OP4_T:
-				instr.op4.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field));
+				instr.op4.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field), 10);
 				break;
 			default:
 				throw std::logic_error("Missed a column when implementing CSV parsing: " + std::to_string(column));
@@ -270,25 +270,20 @@ void x86CSVParse(InstructionReference &instrReference)
 
 	for (std::string line {}; std::getline(csvFile, line); csvLines.push_back(line));
 
+	// Get rid of the label row
 	csvLines.erase(csvLines.begin());
 
 	std::vector<Instruction> instrs {};
-	std::set<Opcode> unique_ops {};
 	
 	for (auto line : csvLines)
 	{
 		auto instr = ParseCSVLine(line);
-		instrs.push_back(instr);
-		if (unique_ops.count(instr.encoded.opcode) > 0)
+
+		if (instrReference.count(instr.encoded.opcode) == 0)
 		{
-			std::cout << instr.attrib.intrinsic.mnemonic << '\n';
+			instrReference.Emplace(instr.encoded.opcode, instr);
 		}
-
-		unique_ops.insert(instr.encoded.opcode);
 	}
-	
-	std::cout << instrs.size() << " " << unique_ops.size();
-
 }
 
 };

@@ -1,5 +1,6 @@
 #include <utility>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 
 #include "decode.h"
@@ -117,7 +118,17 @@ bool InstructionReference::ContainsPrimary(byte b)
 
 Instruction InstructionReference::GetReference(Opcode opcode)
 {
-	return reference.at(opcode);
+	if (reference.count(opcode) > 0)
+	{
+		return reference.at(opcode);
+	}
+
+	else
+	{
+		std::stringstream err; 
+		err << std::hex << "Tried to lookup opcode that does not exist: " << opcode.mandatoryPrefix << " " << (int)opcode.twoByte << " " << opcode.primary << " " << opcode.secondary << " " << (int)opcode.extension;
+		throw std::runtime_error(err.str());
+	}
 }
 
 void InstructionReference::Emplace(Opcode opcode, Instruction instruction)
@@ -125,9 +136,32 @@ void InstructionReference::Emplace(Opcode opcode, Instruction instruction)
 	reference.emplace(opcode, instruction);
 }
 
+funcptr AddrMethodHandler::at(AddrMethod method)
+{
+	if (addrMethodHandlers.count(method) > 0)
+	{
+		return addrMethodHandlers.at(method);
+	}
+
+	// If the addressing method is a register
+	else if (static_cast<int>(method) > REGISTER_LOWER_BOUND && static_cast<int>(method) < REGISTER_UPPER_BOUND)
+	{
+		return MethodRegister;
+	}
+
+	else
+	{
+		std::cerr << (int)method;
+		return MethodError;
+	}
+}
+
 InstructionReference instrReference {};
 
+AddrMethodHandler addrMethodHandler {};
+
 };
+
 
 namespace State_x86
 {
@@ -295,6 +329,11 @@ void MethodError(LinearDecoder * context, Instruction &instr)
 	throw std::runtime_error("MethodError state reached in x86 state machine.");
 }
 
+void MethodUnimplemented(LinearDecoder * context, Instruction &instr)
+{
+	context->ChangeState(Operands);
+}
+
 void MethodA(LinearDecoder * context, Instruction &instr)
 {
 	context->ChangeState(Operands);
@@ -362,6 +401,7 @@ void MethodH(LinearDecoder * context, Instruction &instr)
 
 }
 
+// IMMD data
 void MethodI(LinearDecoder * context, Instruction &instr)
 {
 	for (int i = 0; i < instr.activeOperand->attrib.intrinsic.size; i++)

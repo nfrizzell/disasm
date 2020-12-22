@@ -11,16 +11,20 @@ namespace ISet_x86
 // simply not yet implemented
 std::map<OperandType, uint8_t> typeSize16
 {
+	{OperandType::NOT_APPLICABLE, 0},
 	{OperandType::a, 4},
 	{OperandType::b, 1},
 	{OperandType::c, 1},
 	{OperandType::d, 4},
 	{OperandType::dq, 16},
 	{OperandType::p, 4},
+	{OperandType::pd, 16},
 	{OperandType::pi, 8},
 	{OperandType::ps, 16},
 	{OperandType::q, 8},
+	{OperandType::qq, 32},
 	{OperandType::s, 6},
+	{OperandType::sd, 16},
 	{OperandType::ss, 16},
 	{OperandType::si, 4},
 	{OperandType::v, 2},
@@ -28,8 +32,39 @@ std::map<OperandType, uint8_t> typeSize16
 	{OperandType::x, 8}, 
 	{OperandType::y, 4}, 
 	{OperandType::z, 2},	
-	// Possibly not needed as registers have a specified size as well using the new method I'm using
-	/*
+
+	// These are other types that I haven't gotten around to figuring out what size
+	// data they represent yet
+	{OperandType::bcd, 2},	
+	{OperandType::bs, 2},	
+	{OperandType::bsq, 2},	
+	{OperandType::bss, 2},	
+	{OperandType::di, 2},	
+	{OperandType::dqp, 2},	
+	{OperandType::dr, 2},	
+	{OperandType::e, 2},	
+	{OperandType::er, 2},	
+	{OperandType::psq, 2},	
+	{OperandType::ptp, 2},	
+	{OperandType::qi, 2},	
+	{OperandType::sr, 2},	
+	{OperandType::st, 2},	
+	{OperandType::stx, 2},	
+	{OperandType::vds, 2},	
+	{OperandType::vqp, 2},	
+	{OperandType::vs, 2},	
+	{OperandType::wi, 2},	
+	{OperandType::va, 2},	
+	{OperandType::dqa, 2},	
+	{OperandType::wa, 2},	
+	{OperandType::wo, 2},	
+	{OperandType::ws, 2},	
+	{OperandType::da, 2},	
+	{OperandType::do_, 2},	
+	{OperandType::qa, 2},	
+	{OperandType::qs, 2},	
+	{OperandType::vq, 2},	
+
 	{OperandType::AH, 2},
 	{OperandType::AL, 2},
 	{OperandType::AX, 2},
@@ -63,13 +98,13 @@ std::map<OperandType, uint8_t> typeSize16
 	{OperandType::IP, 2},
 	{OperandType::EIP, 4},
 	{OperandType::EFLAGS, 2}
-	*/
 };
 
 // If a type is not listed here, it is because it is either hard to find information on or is
 // simply not yet implemented
 std::map<OperandType, uint8_t> typeSize32
 {
+	{OperandType::NOT_APPLICABLE, 0},
 	{OperandType::a, 8},
 	{OperandType::b, 1},
 	{OperandType::c, 2},
@@ -87,8 +122,7 @@ std::map<OperandType, uint8_t> typeSize32
 	{OperandType::x, 16}, 
 	{OperandType::y, 8}, 
 	{OperandType::z, 8},	
-	// Possibly not needed as registers have a specified size as well using the new method I'm using
-	/*
+
 	{OperandType::AH, 2},
 	{OperandType::AL, 2},
 	{OperandType::AX, 2},
@@ -122,7 +156,6 @@ std::map<OperandType, uint8_t> typeSize32
 	{OperandType::IP, 2},
 	{OperandType::EIP, 4},
 	{OperandType::EFLAGS, 2}
-	*/
 };
 
 // Defined values of the REG field of the ModR/M byte if the data is 8 bits
@@ -174,7 +207,8 @@ bool Opcode::operator==(const Opcode &rhs) const
 	return (mandatoryPrefix == rhs.mandatoryPrefix &&
 		twoByte == rhs.twoByte && 
 		primary == rhs.primary && 
-		secondary == rhs.secondary);
+		secondary == rhs.secondary &&
+		extension == rhs.extension);
 }
 
 bool Opcode::operator<(const Opcode &rhs) const
@@ -184,6 +218,7 @@ bool Opcode::operator<(const Opcode &rhs) const
 	ret = (primary < rhs.primary) ? true : ret;
 	ret = (!twoByte && rhs.twoByte) ? true : ret;
 	ret = (secondary < rhs.secondary) ? true : ret;
+	ret = (extension < rhs.extension) ? true : ret;
 
 	return ret;
 }
