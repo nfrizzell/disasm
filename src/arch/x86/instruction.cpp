@@ -249,6 +249,20 @@ std::size_t OpcodeHash::operator()(const Opcode &op) const
 	return std::hash<std::string>()(ss.str());
 }
 
+bool ThreeByteKey::operator==(const ThreeByteKey &tbk) const
+{
+	return twoByte == tbk.twoByte && primary == tbk.primary;
+}
+
+std::size_t ThreeByteHash::operator()(const ThreeByteKey &tbk) const
+{
+	auto ss = std::stringstream();
+
+	ss << tbk.twoByte << tbk.primary;
+
+	return std::hash<std::string>()(ss.str());
+}
+
 // After retrieving the reference attribute from the reference set, update the current instruction that
 // is being constructed's attributes
 void Instruction::UpdateAttributes(const Instruction &reference)

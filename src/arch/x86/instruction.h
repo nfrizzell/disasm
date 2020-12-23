@@ -235,6 +235,20 @@ enum class OperandType : int16_t
 	UNSUPPORTED = 2201 // Complex instructions that don't fit the usual form
 };
 
+// Used for checking whether or not a given pair of primary opcode and twobyte flag
+// signals that a secondary opcode will be present
+struct ThreeByteKey
+{
+	bool twoByte {};
+	int16_t primary {INVALID};
+	bool operator==(const ThreeByteKey &tbk) const;
+};
+
+struct ThreeByteHash 
+{
+	std::size_t operator()(const ThreeByteKey &op) const;
+};
+
 struct Opcode
 {
 	int16_t mandatoryPrefix {INVALID};

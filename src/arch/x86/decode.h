@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include "../../util/common.h"
 
@@ -157,5 +158,6 @@ private:
 
 extern AddrMethodHandler addrMethodHandler;
 extern InstructionReference instrReference;
+extern std::unordered_map<ThreeByteKey, uint16_t, ThreeByteHash> threeByteReference;
 
 };

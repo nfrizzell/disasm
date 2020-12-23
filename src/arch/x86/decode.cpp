@@ -170,6 +170,8 @@ InstructionReference instrReference {};
 
 AddrMethodHandler addrMethodHandler {};
 
+std::unordered_map<ThreeByteKey, uint16_t, ThreeByteHash> threeByteReference {};
+
 };
 
 
@@ -209,9 +211,6 @@ void Prefix(LinearDecoder * context, Instruction &instr)
 	}
 }
 
-// I don't remember what I was doing with this
-std::vector<uint8_t> threeByteOpcodes {};
-
 void Opcode(LinearDecoder * context, Instruction &instr)
 { 
 	// Advance the byte pointer if a prefix was decoded or two-byte opcode indicated
@@ -237,8 +236,9 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 		instr.encoded.opcode.primary = context->CurrentByte();
 		instr.attrib.runtime.opcodeLength++;
 
-		// Check for three-byte opcode
-		if (instr.encoded.opcode.twoByte && std::find(threeByteOpcodes.begin(), threeByteOpcodes.end(), context->CurrentByte()) != threeByteOpcodes.end())
+		ThreeByteKey tbk = { instr.encoded.opcode.twoByte, instr.encoded.opcode.primary };
+		// Check whether or not a secondary opcode will be present
+		if (threeByteReference.find(tbk) != threeByteReference.end())
 		{
 			if(!context->NextByte())
 			{

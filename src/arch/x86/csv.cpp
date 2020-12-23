@@ -106,7 +106,7 @@ Instruction ParseCSVLine(std::string line)
 
 	// Convert each delimited value into an array entry
 	std::string tempValue {};
-	for (int i = 0; i < line.length(); i++)
+	for (unsigned int i = 0; i < line.length(); i++)
 	{
 		if (line.at(i) == ',')
 		{
@@ -120,7 +120,7 @@ Instruction ParseCSVLine(std::string line)
 		}
 	}
 
-	int column = 0;
+	unsigned int column = 0;
 	while (column < csvValues.size())
 	{
 		std::string field = csvValues.at(column);
@@ -283,6 +283,47 @@ void x86CSVParse(InstructionReference &instrReference)
 			auto opkey {instr.encoded.opcode};
 			instrReference.Emplace(opkey, instr);
 		}
+	}
+}
+
+void threeByteOpcodeCSVParse()
+{
+	std::string path = "../data/secopcd.csv";
+	std::ifstream csvFile {path};
+	if (!csvFile.is_open())
+	{
+		throw std::runtime_error("Failed to open x86.csv");
+	}
+
+	std::vector<std::string> csvLines {};
+
+	for (std::string line {}; std::getline(csvFile, line); csvLines.push_back(line));
+	// Get rid of the label row
+	csvLines.erase(csvLines.begin());
+
+	for (auto line : csvLines)
+	{
+		std::vector<std::string> csvValues {};
+		std::string tempValue {};
+		for (unsigned int i = 0; i < line.length(); i++)
+		{
+			if (line.at(i) == ',')
+			{
+				csvValues.push_back(tempValue);
+				tempValue = "";
+			}
+
+			else
+			{
+				tempValue += line.at(i);
+			}
+		}	
+
+		bool twoByte = ParseAsBool(csvValues.at(0));
+		uint16_t primary = ParseAsValue(csvValues.at(1));
+		uint16_t secondary = ParseAsValue(csvValues.at(2));
+		ThreeByteKey tbk = { twoByte, primary };
+		threeByteReference[tbk] = secondary;
 	}
 }
 

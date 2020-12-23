@@ -12,6 +12,7 @@ using namespace ISet_x86;
 Arch_x86::Arch_x86(const std::map<std::string, std::vector<byte>> * segment)
 {
 	x86CSVParse(instrReference);
+	threeByteOpcodeCSVParse();
 
 	this->segment = segment;
 }
