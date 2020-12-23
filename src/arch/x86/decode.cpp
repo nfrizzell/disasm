@@ -167,7 +167,6 @@ funcptr AddrMethodHandler::at(AddrMethod method)
 }
 
 InstructionReference instrReference {};
-
 AddrMethodHandler addrMethodHandler {};
 
 std::unordered_map<ThreeByteKey, uint16_t, ThreeByteHash> threeByteReference {};
@@ -302,6 +301,7 @@ void DecodeSuccess(LinearDecoder * context, Instruction &instr)
 
 	instr.attrib.runtime.resolved = true;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
+	std::cout << instr << '\n';
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
 
 	context->ChangeState(Init); // Reset state
@@ -375,7 +375,17 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 
 	byte modrmByte = context->CurrentByte();
 	instr.InterpretModRMByte(modrmByte);
-	
+
+	// Retrieve the actual opext if it exists, replacing the placeholder
+	// Afterwards, update the relevant attributes (such as mnemonic) using 
+	// the new information
+	if (instr.encoded.opcode.extension != INVALID)
+	{
+		instr.encoded.opcode.extension = instr.encoded.modrm.regOpBits;
+		auto reference = instrReference.GetReference(instr.encoded.opcode);
+		instr.UpdateAttributes(reference);
+	}
+
 	if (instr.attrib.runtime.hasSIB)
 	{
 		// Get SIB byte
@@ -388,6 +398,8 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		byte sibByte = context->CurrentByte();
 		instr.InterpretSIBByte(sibByte);
 	}
+
+	// After finding the 
 	
 	context->ChangeState(Operands);
 }
@@ -513,6 +525,10 @@ void MethodY(LinearDecoder * context, Instruction &instr)
 
 void MethodZ(LinearDecoder * context, Instruction &instr)
 {
+	uint8_t relevantOpcodeSection = instr.encoded.opcode.primary & 0b00000111;
+	AddrMethod encodedReg = ModRMRegisterEncoding32.at(relevantOpcodeSection);
+	instr.activeOperand->attrib.runtime.isRegister = true;
+	instr.activeOperand->attrib.runtime.regValue = encodedReg;
 	context->ChangeState(Operands);
 }
 

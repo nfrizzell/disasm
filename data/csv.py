@@ -160,13 +160,14 @@ def parse_all_unique_entries(root, twobyte, unique_entries):
 						cop = copy.deepcopy(entry)
 						new_opcd = int(entry.properties['pri_opcd'], 16)+i
 						cop.properties['pri_opcd'] = "{:02x}".format(new_opcd)
+						cop.properties['+r'] = '1'
 						unique_entries.append(cop)
 
 				else:
 					unique_entries.append(entry)
 
 def write_csv(unique_entries):
-	columns= ['mnem', 'pref', 'twobyte', 'pri_opcd', 'sec_opcd', 'op_size', 'sign-ext', 'direction', 
+	columns= ['mnem', 'pref', 'twobyte', 'pri_opcd', 'sec_opcd', '+r', 'op_size', 'sign-ext', 'direction', 
 			'tttn', 'mem_format', 'opcd_ext', 'mode', 'ring', 'lock', 'fpush', 
 			'fpop', 'alias', 'part_alias',  'instr_ext', 'grp1', 'grp2', 'grp3',
 			'test_f', 'modif_f', 'def_f', 'undef_f', 'f_vals', 'exclusive', 'brief',
@@ -183,6 +184,7 @@ def write_csv(unique_entries):
 			csv_file.write(str(int(entry.properties['twobyte'])) + ",")
 			csv_file.write("".join(entry.properties['pri_opcd']) + ",")
 			csv_file.write("".join(entry.properties['sec_opcd']) + ",")
+			csv_file.write("".join(entry.properties['+r']) + ",")
 			csv_file.write("".join(entry.properties['op_size']) + ",")
 			csv_file.write("".join(entry.properties['sign-ext']) + ",")
 			csv_file.write("".join(entry.properties['direction']) + ",")

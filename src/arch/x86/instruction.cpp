@@ -268,7 +268,7 @@ std::size_t ThreeByteHash::operator()(const ThreeByteKey &tbk) const
 void Instruction::UpdateAttributes(const Instruction &reference)
 {
 	attrib.intrinsic = reference.attrib.intrinsic;
-	attrib.runtime.opcodeLength = reference.attrib.runtime.opcodeLength;
+	//attrib.runtime.opcodeLength = reference.attrib.runtime.opcodeLength;
 	encoded.opcode.extension = reference.encoded.opcode.extension;
 
 	op1.attrib.intrinsic = reference.op1.attrib.intrinsic;
@@ -417,6 +417,14 @@ std::ostream & operator<<(std::ostream &out, const Instruction &instr)
 	<< "popcd:" << '\t' << instr.encoded.opcode.primary << '\n' 
 	<< "sopcd:" << '\t' << instr.encoded.opcode.secondary << '\n' 
 	<< "opext:" << '\t' << (int)instr.encoded.opcode.extension << '\n';
+
+	out << std::dec << '\t' << "op1: " << (int)instr.op1.attrib.intrinsic.addrMethod << " " << (int)instr.op1.attrib.intrinsic.type << '\n';
+
+	out << std::dec << '\t' << "op2: " << (int)instr.op2.attrib.intrinsic.addrMethod << " " << (int)instr.op2.attrib.intrinsic.type << '\n';
+
+	out << std::dec << '\t' << "op3: " << (int)instr.op3.attrib.intrinsic.addrMethod << " " << (int)instr.op3.attrib.intrinsic.type << '\n';
+
+	out << std::dec << '\t' << "op4: " << (int)instr.op4.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.type << '\n';
 
 	return out;
 }

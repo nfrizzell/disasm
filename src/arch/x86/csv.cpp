@@ -19,39 +19,40 @@ enum CSV_COLUMNS
 	TWOBYTE = 2,
 	PRI_OPCD = 3,
 	SEC_OPCD = 4,
-	OP_SIZE = 5,
-	SIGN_EXT = 6,
-	DIRECTION = 7,
-	TTTN = 8,
-	MEM_FORMAT = 9,
-	OPCD_EXT = 10,
-	MODE = 11,
-	RING = 12,
-	LOCK = 13,
-	FPUSH = 14,
-	FPOP = 15,
-	ALIAS = 16,
-	PART_ALIAS = 17,
-	INSTR_EXT = 18,
-	GRP1 = 19,
-	GRP2 = 20,
-	GRP3 = 21,
-	TEST_F = 22,
-	MODIF_F = 23,
-	DEF_F = 24,
-	UNDEF_F = 25,
-	F_VALS = 26,
-	EXCLUSIVE = 27,
-	BRIEF = 28,
+	PLUSR = 5,
+	OP_SIZE = 6,
+	SIGN_EXT = 7,
+	DIRECTION = 8,
+	TTTN = 9,
+	MEM_FORMAT = 10,
+	OPCD_EXT = 11,
+	MODE = 12,
+	RING = 13,
+	LOCK = 14,
+	FPUSH = 15,
+	FPOP = 16,
+	ALIAS = 17,
+	PART_ALIAS = 18,
+	INSTR_EXT = 19,
+	GRP1 = 20,
+	GRP2 = 21,
+	GRP3 = 22,
+	TEST_F = 23,
+	MODIF_F = 24,
+	DEF_F = 25,
+	UNDEF_F = 26,
+	F_VALS = 27,
+	EXCLUSIVE = 28,
+	BRIEF = 29,
 
-	OP1_M = 29,
-	OP1_T = 30,
-	OP2_M = 31,
-	OP2_T = 32,
-	OP3_M = 33,
-	OP3_T = 34,
-	OP4_M = 35,
-	OP4_T = 36
+	OP1_M = 30,
+	OP1_T = 31,
+	OP2_M = 32,
+	OP2_T = 33,
+	OP3_M = 34,
+	OP3_T = 35,
+	OP4_M = 36,
+	OP4_T = 37
 };
 
 namespace ISet_x86
@@ -141,6 +142,9 @@ Instruction ParseCSVLine(std::string line)
 				break;
 			case CSV_COLUMNS::SEC_OPCD:
 				instr.encoded.opcode.secondary = ParseAsValue(field);
+				break;
+			case CSV_COLUMNS::PLUSR:
+				instr.attrib.intrinsic.plusr = ParseAsBool(field);
 				break;
 			case CSV_COLUMNS::OP_SIZE:
 				instr.encoded.opcode.fields.operandSize = ParseAsBool(field);

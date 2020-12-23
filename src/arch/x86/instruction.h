@@ -325,9 +325,10 @@ public:
 			std::string documentationStatus {"UNRESOLVED"};
 			char operationMode {INVALID};
 			char ringLevel {INVALID};
-			bool lock {false};
-			bool fpush {false};		
-			bool fpop {false};		
+			bool plusr {};
+			bool lock {};
+			bool fpush {};		
+			bool fpop {};		
 			std::string alias {"UNRESOLVED"};
 			std::string iext {"UNRESOLVED"};
 			std::string group1 {"UNRESOLVED"};
@@ -340,8 +341,8 @@ public:
 			std::string undefinedFlags {"UNRESOLVED"};
 			std::string flagValues {"UNRESOLVED"};
 
-			bool x86Exclusive {false};
-			bool x64Exclusive {false};
+			bool x86Exclusive {};
+			bool x64Exclusive {};
 
 			std::string brief {"UNRESOLVED"};
 
@@ -355,13 +356,13 @@ public:
 			uint8_t opcodeLength {}; // Not including mandatory prefix
 			uint8_t displacementSize {}; // Size of displacement in bytes  
 
-			bool resolved {false}; // If the instruction has been successfully read
-			bool hasSIB {false};
-			bool hasDisplacement {false};
-			bool op1Read {false}; // Check if op1 has been read before op2
-			bool op2Read {false}; // Check if op1 has been read before op2
-			bool modRMRead {false};
-			bool sibRead {false};
+			bool resolved {}; // If the instruction has been successfully read
+			bool hasSIB {};
+			bool hasDisplacement {};
+			bool op1Read {}; // Check if op1 has been read before op2
+			bool op2Read {}; // Check if op1 has been read before op2
+			bool modRMRead {};
+			bool sibRead {};
 
 		} runtime {};
 
@@ -412,5 +413,9 @@ private:
 	OperandType ModRMRegValue(int rmBits);
 	uint8_t OperandByteSize(); // Returns size of operand in bytes based on prefix & type
 };
+
+extern const std::map<int, AddrMethod> ModRMRegisterEncoding8;
+extern const std::map<int, AddrMethod> ModRMRegisterEncoding16;
+extern const std::map<int, AddrMethod> ModRMRegisterEncoding32;
 
 };
