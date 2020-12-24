@@ -58,10 +58,19 @@ bool __attribute__((warn_unused_result)) LinearDecoder::NextByte()
 		return true;
 	}
 
-	else
+	return false;
+}
+
+bool LinearDecoder::ReverseByte()
+{
+	if (byteOffset > 0)
 	{
-		return false;
+		byteOffset--;
+		currentByte = section->at(byteOffset);
+		return true;
 	}
+
+	return false;
 }
 
 void LinearDecoder::NextInstruction()
@@ -236,6 +245,7 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 		instr.attrib.runtime.opcodeLength++;
 
 		ThreeByteKey tbk = { instr.encoded.opcode.twoByte, instr.encoded.opcode.primary };
+
 		// Check whether or not a secondary opcode will be present
 		if (threeByteReference.find(tbk) != threeByteReference.end())
 		{
@@ -245,8 +255,18 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 				return;
 			}
 
-			instr.encoded.opcode.secondary = context->CurrentByte();
-			instr.attrib.runtime.opcodeLength++;
+			auto secondary = context->CurrentByte();
+
+			if (threeByteReference.at(tbk) == secondary)
+			{
+				instr.encoded.opcode.secondary = secondary;
+				instr.attrib.runtime.opcodeLength++;
+			}
+
+			else
+			{
+				context->ReverseByte();
+			}
 		}
 
 		// Update the instruction based upon the common attributes inferred from opcode
@@ -367,15 +387,19 @@ void MethodD(LinearDecoder * context, Instruction &instr)
 
 void MethodE(LinearDecoder * context, Instruction &instr)
 {
-	if (!context->NextByte())
+	if (!instr.attrib.runtime.modRMRead)
 	{
-		context->ChangeState(EndOfSegment); 
-		return;
+		// Get the ModRM byte
+		if (!context->NextByte())
+		{
+			context->ChangeState(EndOfSegment); 
+			return;
+		}
+
+		byte modrmByte = context->CurrentByte();
+		instr.InterpretModRMByte(modrmByte);
 	}
-
-	byte modrmByte = context->CurrentByte();
-	instr.InterpretModRMByte(modrmByte);
-
+	
 	// Retrieve the actual opext if it exists, replacing the placeholder
 	// Afterwards, update the relevant attributes (such as mnemonic) using 
 	// the new information
@@ -386,7 +410,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		instr.UpdateAttributes(reference);
 	}
 
-	if (instr.attrib.runtime.hasSIB)
+	if (instr.attrib.runtime.hasSIB && !instr.attrib.runtime.sibRead)
 	{
 		// Get SIB byte
 		if (!context->NextByte())
@@ -399,8 +423,20 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		instr.InterpretSIBByte(sibByte);
 	}
 
-	// After finding the 
-	
+	if (instr.attrib.runtime.hasDisplacement = true)
+	{
+		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
+		{
+			if (!context->NextByte())
+			{
+				context->ChangeState(EndOfSegment); 
+				return;
+			}
+
+			instr.encoded.disp += context->CurrentByte();
+		}
+	}
+
 	context->ChangeState(Operands);
 }
 
@@ -412,6 +448,23 @@ void MethodF(LinearDecoder * context, Instruction &instr)
 
 void MethodG(LinearDecoder * context, Instruction &instr)
 {
+	if (!instr.attrib.runtime.modRMRead)
+	{
+		// Get the ModRM byte
+		if (!context->NextByte())
+		{
+			context->ChangeState(EndOfSegment); 
+			return;
+		}
+
+		byte modrmByte = context->CurrentByte();
+		instr.InterpretModRMByte(modrmByte);
+	}
+	
+	AddrMethod encodedReg = ModRMRegisterEncoding32.at(instr.encoded.modrm.regOpBits);
+	instr.activeOperand->attrib.runtime.isRegister = true;
+	instr.activeOperand->attrib.runtime.regValue = encodedReg;
+
 	context->ChangeState(Operands);
 }
  
@@ -424,7 +477,25 @@ void MethodH(LinearDecoder * context, Instruction &instr)
 // IMMD data
 void MethodI(LinearDecoder * context, Instruction &instr)
 {
-	for (int i = 0; i < instr.activeOperand->attrib.intrinsic.size; i++)
+	bool sField = (bool)(instr.encoded.opcode.primary & 0b00000001);
+	bool xField = (bool)(instr.encoded.opcode.primary & 0b00000010);
+	int immdSize = 0;
+
+	if (sField)
+	{
+		immdSize = 4;
+	}
+	else
+	{
+		immdSize = 1;
+	}
+	// Overrides
+	if (xField)
+	{
+		immdSize = 1;	
+	}
+
+	for (int i = 0; i < immdSize; i++)
 	{
 		if (!context->NextByte())
 		{
@@ -439,10 +510,37 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 	context->ChangeState(Operands);
 }
 
+// This one is messy, I need to come back and see if it can be fixed later
 void MethodJ(LinearDecoder * context, Instruction &instr)
 {
-	context->ChangeState(Operands);
+	// Behaves differently than the others
+	if (instr.attrib.intrinsic.mnemonic == "CALL")
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (!context->NextByte())
+			{
+				context->ChangeState(EndOfSegment);
+				return;
+			}
 
+			instr.attrib.runtime.displacementSize = 4;
+			instr.encoded.disp += context->CurrentByte();
+		}
+	}
+
+	else
+	{
+		if (!context->NextByte())
+		{
+			context->ChangeState(EndOfSegment);
+			return;
+		}
+		instr.attrib.runtime.displacementSize = 1;
+		instr.encoded.disp = context->CurrentByte();
+	}
+	
+	context->ChangeState(Operands);
 }
 
 void MethodL(LinearDecoder * context, Instruction &instr)

@@ -77,6 +77,7 @@ public:
 	byte CurrentByte();
 	unsigned int ByteOffset();
 	bool NextByte();
+	bool ReverseByte();
 	void NextInstruction();
 	void ChangeState(funcptr newState);
 

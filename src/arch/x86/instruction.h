@@ -34,7 +34,27 @@ const std::vector<byte> prefixes
 	0x66,		// Operand-size modifier
 
 	// Group 4
-	0x67		// Address-size modifier
+	0x67,		// Address-size modifier
+
+	/*
+	// REX (64 bit)
+	0x40, 
+	0x41,
+	0x42,
+	0x43,
+	0x44,
+	0x45,
+	0x46,
+	0x47,	
+	0x48, 
+	0x49,
+	0x4A,
+	0x4B,
+	0x4C,
+	0x4D,
+	0x4E,
+	0x4F
+	*/
 };
 
 // The range that register types fall into in the enum

@@ -8,7 +8,7 @@ std::unique_ptr<Arch> Arch::NewArch(const std::map<std::string, std::vector<byte
 		case (ArchType::x86):
 			return std::make_unique<Arch_x86>(section);
 		default:
-			return nullptr;
+			return std::make_unique<Arch_x86>(section);
 
 	}
 	

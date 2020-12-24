@@ -222,6 +222,7 @@ void Operand::UpdateSize(std::array<byte, 4> &prefixes)
 
 	bool addrSizePrefix {};
 	bool operandSizePrefix {}; 
+	bool REXPrefix {};
 
 	for (auto prefix : prefixes)
 	{
@@ -236,8 +237,18 @@ void Operand::UpdateSize(std::array<byte, 4> &prefixes)
 		}
 	}
 
-	bool is32 = addrSizePrefix || operandSizePrefix;
-	attrib.intrinsic.size = is32 ? typeSize32.at(attrib.intrinsic.type) : typeSize16.at(attrib.intrinsic.type);
+	bool isPrefix = addrSizePrefix || operandSizePrefix;
+	
+	if (REXPrefix)
+	{
+		//attrib.intrinsic.size = typeSize64.at(attrib.intrinsic.type);
+	}
+
+	else
+	{
+		attrib.intrinsic.size = isPrefix ? typeSize32.at(attrib.intrinsic.type) : typeSize16.at(attrib.intrinsic.type);
+	}
+
 }
 
 std::size_t OpcodeHash::operator()(const Opcode &op) const
@@ -309,9 +320,6 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 	encoded.modrm.regOpBits = (modrmByte & 0b00111000) >> 3;
 	encoded.modrm.rmBits    = (modrmByte & 0b00000111);
 
-	// Check for SIB mode
-	attrib.runtime.hasSIB = (encoded.modrm.rmBits == 0b100 && encoded.modrm.modBits != 0b11);
-
 	if (encoded.modrm.modBits == 0b00)
 	{
 		if (encoded.modrm.rmBits == 0b000 || encoded.modrm.rmBits == 0b111)
@@ -336,6 +344,7 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 	else if (encoded.modrm.modBits == 0b01)
 	{
 		activeOperand->attrib.runtime.isAddress = true;
+		activeOperand->attrib.runtime.isRegister = false;
 		attrib.runtime.hasDisplacement = true;
 		attrib.runtime.displacementSize = 1;
 	}
@@ -344,6 +353,7 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 	else if (encoded.modrm.modBits == 0b10)
 	{
 		activeOperand->attrib.runtime.isAddress = true;
+		activeOperand->attrib.runtime.isRegister = false;
 		attrib.runtime.hasDisplacement = true;
 		attrib.runtime.displacementSize = 4;
 	}
@@ -351,6 +361,7 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 	else if (encoded.modrm.modBits == 0b11)
 	{
 		activeOperand->attrib.runtime.isAddress = false;
+		activeOperand->attrib.runtime.isRegister = true;
 		attrib.runtime.hasDisplacement = false;
 		if (op1.attrib.intrinsic.size < 2 ) // 8 bit operand 
 		{
@@ -362,6 +373,8 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 			activeOperand->attrib.runtime.regValue = ModRMRegisterEncoding32.at(*operandField);
 		}
 	}
+
+	attrib.runtime.modRMRead = true;
 }
 
 void Instruction::InterpretSIBByte(byte sibByte)
@@ -407,6 +420,8 @@ void Instruction::InterpretSIBByte(byte sibByte)
 	{
 		op2.attrib.runtime.regValue = SIBBase.at(encoded.sib.baseBits);
 	}
+
+	attrib.runtime.sibRead = true;
 }
 
 std::ostream & operator<<(std::ostream &out, const Instruction &instr)
