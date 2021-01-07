@@ -384,6 +384,7 @@ public:
 			bool op2Read {}; // Check if op1 has been read before op2
 			bool modRMRead {};
 			bool sibRead {};
+			bool dispRead {};
 
 		} runtime {};
 

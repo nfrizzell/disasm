@@ -174,7 +174,6 @@ funcptr AddrMethodHandler::at(AddrMethod method)
 
 	else
 	{
-		std::cerr << (int)method;
 		return MethodError;
 	}
 }
@@ -221,26 +220,25 @@ void Prefix(LinearDecoder * context, Instruction &instr)
 	{
 		context->ChangeState(Opcode);
 	}
-	std::cerr << '\n';
 }
 
 void Opcode(LinearDecoder * context, Instruction &instr)
 { 
-	// Advance the byte pointer if a prefix was decoded or two-byte opcode indicated
-	if (instr.attrib.runtime.prefixCount > 0 || instr.encoded.opcode.twoByte)
+	// Current byte signals a two-byte opcode	
+	if (context->CurrentByte() == 0x0F) 
+	{
+		instr.encoded.opcode.twoByte = true;
+		instr.attrib.runtime.opcodeLength++;
+	}
+
+	// Advance the byte pointer if two-byte opcode indicated
+	if (instr.encoded.opcode.twoByte)
 	{
 		if(!context->NextByte())
 		{
 			context->ChangeState(EndOfSegment);
 			return;
 		}
-	}
-
-	// Current byte signals a two-byte opcode	
-	if (context->CurrentByte() == 0x0F) 
-	{
-		instr.encoded.opcode.twoByte = true;
-		instr.attrib.runtime.opcodeLength++;
 	}
 
 	// Current byte is a valid primary opcode (including those that follow the two-byte signal)
@@ -332,12 +330,13 @@ void DecodeSuccess(LinearDecoder * context, Instruction &instr)
 		return;
 	}
 
-	std::cerr << instr.attrib.intrinsic.mnemonic << " " << (int)instr.op1.attrib.intrinsic.addrMethod << " " << (int)instr.op2.attrib.intrinsic.addrMethod << " " << (int)instr.op3.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.addrMethod << '\n';
+	std::cerr << std::dec << instr.attrib.intrinsic.mnemonic << " " << (int)instr.op1.attrib.intrinsic.addrMethod << " " << (int)instr.op2.attrib.intrinsic.addrMethod << " " << (int)instr.op3.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.addrMethod << '\n';
 	instr.attrib.runtime.resolved = true;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
 
 	context->ChangeState(Init); // Reset state
+	std::cout << '\n';
 }
 
 void DecodeFailure(LinearDecoder * context, Instruction &instr)
@@ -437,7 +436,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		instr.InterpretSIBByte(sibByte);
 	}
 
-	if (instr.attrib.runtime.hasDisplacement = true)
+	if (instr.attrib.runtime.hasDisplacement = true && !instr.attrib.runtime.dispRead)
 	{
 		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
 		{
@@ -449,6 +448,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 
 			instr.encoded.disp += context->CurrentByte();
 		}
+		instr.attrib.runtime.dispRead = true;
 	}
 
 	context->ChangeState(Operands);
@@ -492,7 +492,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 		instr.InterpretSIBByte(sibByte);
 	}
 
-	if (instr.attrib.runtime.hasDisplacement = true)
+	if (instr.attrib.runtime.hasDisplacement = true && !instr.attrib.runtime.dispRead)
 	{
 		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
 		{
@@ -504,6 +504,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 
 			instr.encoded.disp += context->CurrentByte();
 		}
+		instr.attrib.runtime.dispRead = true;
 	}
 	context->ChangeState(Operands);
 }
@@ -667,13 +668,13 @@ void MethodZ(LinearDecoder * context, Instruction &instr)
 	AddrMethod encodedReg = ModRMRegisterEncoding32.at(relevantOpcodeSection);
 	instr.activeOperand->attrib.runtime.isRegister = true;
 	instr.activeOperand->attrib.runtime.regValue = encodedReg;
+
 	context->ChangeState(Operands);
 }
 
 void MethodRegister(LinearDecoder * context, Instruction &instr)
 {
 	instr.activeOperand->attrib.runtime.isRegister = true;
-
 	context->ChangeState(Operands);
 }
 
