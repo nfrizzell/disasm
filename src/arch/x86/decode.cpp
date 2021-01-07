@@ -51,6 +51,7 @@ unsigned int LinearDecoder::ByteOffset()
 
 bool __attribute__((warn_unused_result)) LinearDecoder::NextByte()
 {
+	std::cerr << std::hex << (int)currentByte << '\n';
 	if (byteOffset + 1 < section->size())
 	{
 		byteOffset++;
@@ -144,9 +145,12 @@ Instruction InstructionReference::GetReference(Opcode opkey)
 
 	else
 	{
+		return Instruction {};
+		/*
 		std::stringstream err; 
 		err << std::hex << "Tried to lookup opcode that does not exist: " << opkey.mandatoryPrefix << " " << (int)opkey.twoByte << " " << opkey.primary << " " << opkey.secondary << " " << (int)opkey.extension;
 		throw std::runtime_error(err.str());
+		*/
 	}
 }
 
@@ -217,6 +221,7 @@ void Prefix(LinearDecoder * context, Instruction &instr)
 	{
 		context->ChangeState(Opcode);
 	}
+	std::cerr << '\n';
 }
 
 void Opcode(LinearDecoder * context, Instruction &instr)
@@ -271,10 +276,16 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 
 		// Update the instruction based upon the common attributes inferred from opcode
 		const Instruction reference = instrReference.GetReference(instr.encoded.opcode);
-		//std::cout << (int)reference.op3.attrib.intrinsic.type << '\n';
-		instr.UpdateAttributes(reference);
+		if (reference.attrib.intrinsic.mnemonic == "UNRESOLVED")
+		{
+			context->ChangeState(DecodeFailure);
+		}
+		else
+		{
+			instr.UpdateAttributes(reference);
 
-		context->ChangeState(Operands);
+			context->ChangeState(Operands);
+		}
 	}
 
 	// No opcode byte was found in the byte sequence, which means decoding cannot continue
@@ -282,10 +293,12 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 	{
 		context->ChangeState(DecodeFailure);
 	}	
+
 }
 
 void Operands(LinearDecoder * context, Instruction &instr)
 {
+
 	// If the instruction has a first operand that hasn't been read yet
 	if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && !instr.attrib.runtime.op1Read)
 	{
@@ -319,9 +332,9 @@ void DecodeSuccess(LinearDecoder * context, Instruction &instr)
 		return;
 	}
 
+	std::cerr << instr.attrib.intrinsic.mnemonic << " " << (int)instr.op1.attrib.intrinsic.addrMethod << " " << (int)instr.op2.attrib.intrinsic.addrMethod << " " << (int)instr.op3.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.addrMethod << '\n';
 	instr.attrib.runtime.resolved = true;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
-	std::cout << instr << '\n';
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
 
 	context->ChangeState(Init); // Reset state
@@ -415,6 +428,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		// Get SIB byte
 		if (!context->NextByte())
 		{
+			std::cerr << "SIB: " << (int)instr.attrib.runtime.hasSIB << '\n';
 			context->ChangeState(EndOfSegment); 
 			return;
 		}
@@ -465,6 +479,32 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 	instr.activeOperand->attrib.runtime.isRegister = true;
 	instr.activeOperand->attrib.runtime.regValue = encodedReg;
 
+	if (instr.attrib.runtime.hasSIB && !instr.attrib.runtime.sibRead)
+	{
+		// Get SIB byte
+		if (!context->NextByte())
+		{
+			context->ChangeState(EndOfSegment); 
+			return;
+		}
+		
+		byte sibByte = context->CurrentByte();
+		instr.InterpretSIBByte(sibByte);
+	}
+
+	if (instr.attrib.runtime.hasDisplacement = true)
+	{
+		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
+		{
+			if (!context->NextByte())
+			{
+				context->ChangeState(EndOfSegment); 
+				return;
+			}
+
+			instr.encoded.disp += context->CurrentByte();
+		}
+	}
 	context->ChangeState(Operands);
 }
  

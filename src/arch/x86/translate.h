@@ -20,7 +20,7 @@ private:
 	std::vector<Instruction> decodedInstrs;
 
 	std::string StringifyInstruction(const Instruction &instr);
-	void StringifyOperand(std::string &line, const Instruction &instr, const Operand &op, const bool isOp1);
+	std::string StringifyOperand(const Instruction &instr, const Operand &op, const bool isOp1);
 };
 
 };

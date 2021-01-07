@@ -1,4 +1,7 @@
 #include "translate.h"
+#include <sstream>
+#include <algorithm>
+#include <string>
 
 namespace ISet_x86
 {
@@ -60,21 +63,25 @@ std::vector<std::string> Translator::TranslateToASM()
 
 std::string Translator::StringifyInstruction(const Instruction &instr)
 {
-	std::string line = instr.attrib.intrinsic.mnemonic;
+	auto line = std::stringstream();
+	
+	std::string mnemonic = instr.attrib.intrinsic.mnemonic;
+	std::transform(mnemonic.begin(), mnemonic.end(), mnemonic.begin(), ::tolower);
+	line << mnemonic;
 
-	StringifyOperand(line, instr, instr.op1, true);
-	StringifyOperand(line, instr, instr.op2, false);
+	line << " " << StringifyOperand(instr, instr.op1, true);
+	line << " " << StringifyOperand(instr, instr.op2, false);
 
-	return line;
+	return line.str();
 }
 
-void Translator::StringifyOperand(std::string &line, const Instruction &instr, const Operand &op, const bool isOp1)
+std::string Translator::StringifyOperand(const Instruction &instr, const Operand &op, const bool isOp1)
 {
-	std::string opStr {};
+	std::string opStr = "";
 
 	if (op.attrib.intrinsic.type == OperandType::NOT_APPLICABLE)
 	{
-		return;
+		return opStr;
 	}
 
 	if (op.attrib.runtime.isRegister)
@@ -87,7 +94,7 @@ void Translator::StringifyOperand(std::string &line, const Instruction &instr, c
 		opStr = ("[" + opStr + "]");
 	}
 
-	line += (" " + opStr);
+	return opStr;
 }
 
 };

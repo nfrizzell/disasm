@@ -124,6 +124,38 @@ std::map<OperandType, uint8_t> typeSize32
 	{OperandType::y, 8}, 
 	{OperandType::z, 8},	
 
+	// These are other types that I haven't gotten around to figuring out what size
+	// data they represent yet
+	{OperandType::bcd, 2},	
+	{OperandType::bs, 2},	
+	{OperandType::bsq, 2},	
+	{OperandType::bss, 2},	
+	{OperandType::di, 2},	
+	{OperandType::dqp, 2},	
+	{OperandType::dr, 2},	
+	{OperandType::e, 2},	
+	{OperandType::er, 2},	
+	{OperandType::psq, 2},	
+	{OperandType::ptp, 2},	
+	{OperandType::qi, 2},	
+	{OperandType::sr, 2},	
+	{OperandType::st, 2},	
+	{OperandType::stx, 2},	
+	{OperandType::vds, 2},	
+	{OperandType::vqp, 2},	
+	{OperandType::vs, 2},	
+	{OperandType::wi, 2},	
+	{OperandType::va, 2},	
+	{OperandType::dqa, 2},	
+	{OperandType::wa, 2},	
+	{OperandType::wo, 2},	
+	{OperandType::ws, 2},	
+	{OperandType::da, 2},	
+	{OperandType::do_, 2},	
+	{OperandType::qa, 2},	
+	{OperandType::qs, 2},	
+	{OperandType::vq, 2},	
+
 	{OperandType::AH, 2},
 	{OperandType::AL, 2},
 	{OperandType::AX, 2},
@@ -301,6 +333,8 @@ void Instruction::UpdateAttributes(const Instruction &reference)
 
 void Instruction::InterpretModRMByte(const byte modrmByte)
 {
+	attrib.runtime.modRMRead = true;
+
 	// The field in the ModR/M byte to read from to get the relevant encoded operand
 	uint8_t * operandField = &encoded.modrm.regOpBits;
 
@@ -374,12 +408,17 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 		}
 	}
 
-	attrib.runtime.modRMRead = true;
+	if (encoded.modrm.modBits != 0b11 && encoded.modrm.rmBits == 0b100)
+	{
+		attrib.runtime.hasSIB = true;
+	}
 }
 
 void Instruction::InterpretSIBByte(byte sibByte)
 // Hardcoded as op2 because in all instructions that use the SIB it will be used for op2 (?)
 {
+	attrib.runtime.sibRead = true;
+
 	// Bit-shifted for easier comparisons
 	// Right bit shift on an unsigned integer results in a logical right shift
 	encoded.sib.scaleBits = (sibByte & 0b11000000) >> 6;
@@ -388,20 +427,7 @@ void Instruction::InterpretSIBByte(byte sibByte)
 
 	// Scale
 	op2.attrib.runtime.sibScaleFactor = std::pow(2, encoded.sib.scaleBits);
-
-	// Index
-	if (encoded.sib.indexBits == 0b100)
-	{
-		// Invalid index value, should not occur naturally
-		// Consider changing this in the future to skip to the DecodingFailure state
-		// once debugging is more robust
-		throw std::logic_error("Encountered invalid index value of 0b100 when parsing SIB. This could be a false positive.");
-	}
-	
-	else
-	{
-		op2.attrib.runtime.sibCompliment = SIBIndex.at(encoded.sib.indexBits);
-	}
+	op2.attrib.runtime.sibCompliment = SIBIndex.at(encoded.sib.indexBits);
 
 	// Base
 	if (encoded.sib.baseBits == 0b101 && encoded.modrm.modBits == 0b00)
@@ -420,8 +446,6 @@ void Instruction::InterpretSIBByte(byte sibByte)
 	{
 		op2.attrib.runtime.regValue = SIBBase.at(encoded.sib.baseBits);
 	}
-
-	attrib.runtime.sibRead = true;
 }
 
 std::ostream & operator<<(std::ostream &out, const Instruction &instr)

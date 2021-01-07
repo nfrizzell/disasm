@@ -4,6 +4,7 @@
 #include <array>
 #include <map>
 #include <unordered_map>
+#include <iostream>
 
 #include "../../util/common.h"
 
@@ -412,7 +413,6 @@ public:
 
 		int disp {}; 	  // Displacement constant used by certain addressing modes
 		std::array<byte, 4> immd {}; // Constant operand encoded after instruction
-
 	} encoded {};
 
 	Operand op1 {}; // (Generally) written to

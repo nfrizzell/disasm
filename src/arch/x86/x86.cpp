@@ -23,8 +23,7 @@ std::vector<std::string> Arch_x86::TranslateToAssembly()
 
 	for (auto section : (*segment))
 	{
-		
-		if (section.first == ".init")
+		if (section.first == ".text")
 		{
 			auto decoder = LinearDecoder(&section.second);
 			instructions = decoder.DecodeSection();
