@@ -51,7 +51,6 @@ unsigned int LinearDecoder::ByteOffset()
 
 bool __attribute__((warn_unused_result)) LinearDecoder::NextByte()
 {
-	std::cerr << std::hex << (int)currentByte << '\n';
 	if (byteOffset + 1 < section->size())
 	{
 		byteOffset++;
@@ -229,11 +228,7 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 	{
 		instr.encoded.opcode.twoByte = true;
 		instr.attrib.runtime.opcodeLength++;
-	}
 
-	// Advance the byte pointer if two-byte opcode indicated
-	if (instr.encoded.opcode.twoByte)
-	{
 		if(!context->NextByte())
 		{
 			context->ChangeState(EndOfSegment);
@@ -241,8 +236,10 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 		}
 	}
 
+	
+
 	// Current byte is a valid primary opcode (including those that follow the two-byte signal)
-	else if (instrReference.ContainsPrimary(context->CurrentByte()))
+	if (instrReference.ContainsPrimary(context->CurrentByte()))
 	{
 		instr.encoded.opcode.primary = context->CurrentByte();
 		instr.attrib.runtime.opcodeLength++;
@@ -330,13 +327,12 @@ void DecodeSuccess(LinearDecoder * context, Instruction &instr)
 		return;
 	}
 
-	std::cerr << std::dec << instr.attrib.intrinsic.mnemonic << " " << (int)instr.op1.attrib.intrinsic.addrMethod << " " << (int)instr.op2.attrib.intrinsic.addrMethod << " " << (int)instr.op3.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.addrMethod << '\n';
+	//std::cerr << std::dec << instr.attrib.intrinsic.mnemonic << " " << (int)instr.op1.attrib.intrinsic.addrMethod << " " << (int)instr.op2.attrib.intrinsic.addrMethod << " " << (int)instr.op3.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.addrMethod << '\n';
 	instr.attrib.runtime.resolved = true;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
 
 	context->ChangeState(Init); // Reset state
-	std::cout << '\n';
 }
 
 void DecodeFailure(LinearDecoder * context, Instruction &instr)
@@ -427,7 +423,6 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		// Get SIB byte
 		if (!context->NextByte())
 		{
-			std::cerr << "SIB: " << (int)instr.attrib.runtime.hasSIB << '\n';
 			context->ChangeState(EndOfSegment); 
 			return;
 		}
@@ -544,7 +539,7 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 			return;
 		}
 
-		instr.encoded.immd[i] = context->CurrentByte();
+		instr.encoded.immd += (context->CurrentByte() << (2*i));
 	}
 	
 	instr.activeOperand->attrib.runtime.isImmd = true;

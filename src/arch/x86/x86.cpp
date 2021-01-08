@@ -27,8 +27,8 @@ std::vector<std::string> Arch_x86::TranslateToAssembly()
 		{
 			auto decoder = LinearDecoder(&section.second);
 			instructions = decoder.DecodeSection();
-			//auto translator = Translator(instructions);
-			//assembly = translator.TranslateToASM();
+			auto translator = Translator(instructions);
+			assembly = translator.TranslateToASM();
 
 			if (processFlags.debug)
 			{

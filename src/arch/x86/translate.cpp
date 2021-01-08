@@ -8,6 +8,7 @@ namespace ISet_x86
 
 const std::map<AddrMethod, std::string> regString
 {
+	{ AddrMethod::A, "ERROR" },
 	{ AddrMethod::AH, "ah" },
 	{ AddrMethod::AL, "al" },
 	{ AddrMethod::AX, "ax" },
@@ -69,9 +70,12 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 	std::transform(mnemonic.begin(), mnemonic.end(), mnemonic.begin(), ::tolower);
 	line << mnemonic;
 
-	line << " " << StringifyOperand(instr, instr.op1, true);
-	line << " " << StringifyOperand(instr, instr.op2, false);
+	line << '\t' << StringifyOperand(instr, instr.op1, true);
+	line << StringifyOperand(instr, instr.op2, false);
+	line << StringifyOperand(instr, instr.op3, false);
+	line << StringifyOperand(instr, instr.op4, false);
 
+	std::cout << line.str() << '\n';
 	return line.str();
 }
 
@@ -91,9 +95,15 @@ std::string Translator::StringifyOperand(const Instruction &instr, const Operand
 	
 	if (op.attrib.runtime.isAddress)
 	{
-		opStr = ("[" + opStr + "]");
+		opStr = "[" + opStr + "]";
 	}
 
+
+	if (!isOp1 && opStr != "")
+	{
+		opStr = "," + opStr;
+	}
+		
 	return opStr;
 }
 

@@ -412,8 +412,8 @@ public:
 
 		} sib {};
 
-		int disp {}; 	  // Displacement constant used by certain addressing modes
-		std::array<byte, 4> immd {}; // Constant operand encoded after instruction
+		unsigned int disp {}; 	  // Displacement constant used by certain addressing modes
+		unsigned int immd {}; // Constant operand encoded after instruction
 	} encoded {};
 
 	Operand op1 {}; // (Generally) written to

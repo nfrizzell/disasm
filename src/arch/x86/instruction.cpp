@@ -465,6 +465,9 @@ std::ostream & operator<<(std::ostream &out, const Instruction &instr)
 
 	out << std::dec << '\t' << "op4: " << (int)instr.op4.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.type << '\n';
 
+	out << std::hex << "displacement: " << instr.encoded.disp << '\n';
+	out << std::hex << "immd: " << instr.encoded.immd << '\n';
+
 	return out;
 }
 
