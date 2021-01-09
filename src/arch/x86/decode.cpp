@@ -539,7 +539,7 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 			return;
 		}
 
-		instr.encoded.immd += (context->CurrentByte() << (2*i));
+		instr.encoded.immd += (context->CurrentByte() << (8*i));
 	}
 	
 	instr.activeOperand->attrib.runtime.isImmd = true;

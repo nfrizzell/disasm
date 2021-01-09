@@ -81,30 +81,39 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 
 std::string Translator::StringifyOperand(const Instruction &instr, const Operand &op, const bool isOp1)
 {
-	std::string opStr = "";
+	auto opStr = std::stringstream();
+	opStr << "";
 
 	if (op.attrib.intrinsic.type == OperandType::NOT_APPLICABLE)
 	{
-		return opStr;
+		return "";
 	}
 
-	if (op.attrib.runtime.isRegister)
+	else if (op.attrib.runtime.isRegister)
 	{
-		opStr = regString.at(op.attrib.runtime.regValue);
+		opStr << regString.at(op.attrib.runtime.regValue);
 	}
-	
+
+	else if (op.attrib.runtime.isImmd)
+	{
+		opStr << "0x" << std::hex << instr.encoded.immd;
+	}
+
 	if (op.attrib.runtime.isAddress)
 	{
-		opStr = "[" + opStr + "]";
+		std::string bracketStr = "[" + opStr.str() + "]";
+		opStr.str("");
+		opStr << bracketStr;
 	}
 
-
-	if (!isOp1 && opStr != "")
+	if (!isOp1 && opStr.str() != "")
 	{
-		opStr = "," + opStr;
+		std::string commaStr = "," + opStr.str();
+		opStr.str("");
+		opStr << commaStr;
 	}
-		
-	return opStr;
+
+	return opStr.str();
 }
 
 };
