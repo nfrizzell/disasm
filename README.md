@@ -2,6 +2,9 @@
 
 This is a work-in-progress disassembler. Currently disassembly of x86 executables is supported (although not yet complete), with "naive" support for x64 executables (i.e. using the same logic as for x86 executables, which leads to inaccurate output). In the future I would like to add complete support for x64 and potentially ARM.
 
+#### Usage: 
+    $ disasm [executable name]
+
 #### File format support:
 - [x] ELF
 - [ ] PE
