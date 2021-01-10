@@ -320,7 +320,7 @@ public:
 			bool isImmd {}; // If the operand value is immediate data
 			uint8_t opcodeLength {};
 			// If the operand is a register, the register used will be stored here
-			AddrMethod regValue {};
+			AddrMethod regValue {AddrMethod::NOT_APPLICABLE};
 
 			// Applicable to SIB mode only
 			uint8_t sibScaleFactor {}; // Size of optional SIB scale factor (1/2/4/8)

@@ -81,28 +81,25 @@ void LinearDecoder::NextInstruction()
 	
 void LinearDecoder::ChangeState(funcptr newState)
 {
-	if (processFlags.debug)
+	const int loopMax = 100; // Abritrary limit on same-state loops
+	if (&state == &newState)
 	{
-		const int loopMax = 100; // Abritrary limit on same-state loops
-		if (&state == &newState)
-		{
-			stateLoopCounter++;
-			std::cerr << "state: " << &state << '\n';
-			std::cerr << "new state: " << &newState << '\n';
-		}
-
-		// Used to make sure the program doesn't enter an infinite loop when parsing
-		// this will probably be removed later but for now it is a nice debugging feature
-		if (stateLoopCounter > loopMax)
-		{
-			std::string error = "Process entered infinite loop while parsing x86 instructions. Details:'\n'currentByte = "; 
-			error += currentByte;  ;
-			error += "'\n'byteOffset = ";
-			error += byteOffset;
-			error += '\n';
-			throw std::runtime_error(error);
-		}	
+		stateLoopCounter++;
+		std::cerr << "state: " << &state << '\n';
+		std::cerr << "new state: " << &newState << '\n';
 	}
+
+	// Used to make sure the program doesn't enter an infinite loop when parsing
+	// this will probably be removed later but for now it is a nice debugging feature
+	if (stateLoopCounter > loopMax)
+	{
+		std::string error = "Process entered infinite loop while parsing x86 instructions. Details:'\n'currentByte = "; 
+		error += currentByte;  ;
+		error += "'\n'byteOffset = ";
+		error += byteOffset;
+		error += '\n';
+		throw std::runtime_error(error);
+	}	
 
 	state = newState;		
 }
@@ -235,8 +232,6 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 			return;
 		}
 	}
-
-	
 
 	// Current byte is a valid primary opcode (including those that follow the two-byte signal)
 	if (instrReference.ContainsPrimary(context->CurrentByte()))
@@ -407,6 +402,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		byte modrmByte = context->CurrentByte();
 		instr.InterpretModRMByte(modrmByte);
 	}
+	instr.activeOperand->attrib.runtime.isRegister = true;
 	
 	// Retrieve the actual opext if it exists, replacing the placeholder
 	// Afterwards, update the relevant attributes (such as mnemonic) using 
@@ -431,7 +427,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		instr.InterpretSIBByte(sibByte);
 	}
 
-	if (instr.attrib.runtime.hasDisplacement = true && !instr.attrib.runtime.dispRead)
+	if (instr.attrib.runtime.hasDisplacement && !instr.attrib.runtime.dispRead)
 	{
 		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
 		{
@@ -487,7 +483,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 		instr.InterpretSIBByte(sibByte);
 	}
 
-	if (instr.attrib.runtime.hasDisplacement = true && !instr.attrib.runtime.dispRead)
+	if (instr.attrib.runtime.hasDisplacement && !instr.attrib.runtime.dispRead)
 	{
 		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
 		{

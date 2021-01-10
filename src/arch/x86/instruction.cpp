@@ -343,7 +343,7 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 	// ...
 	// If the ModRM byte has already been read (op1 and op2 both need to read it), also
 	// do this, since the operand to be checked will be encoded in a different field
-	if ((op1.attrib.intrinsic.addrMethod == AddrMethod::I || op2.attrib.intrinsic.addrMethod == AddrMethod::I) || attrib.runtime.modRMRead)
+	if ((op1.attrib.intrinsic.addrMethod == AddrMethod::I || op2.attrib.intrinsic.addrMethod == AddrMethod::I) || attrib.runtime.modRMRead || encoded.opcode.extension != INVALID)
 	{
 		operandField = &encoded.modrm.rmBits;
 	}

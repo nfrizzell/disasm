@@ -89,9 +89,10 @@ std::string Translator::StringifyOperand(const Instruction &instr, const Operand
 		return "";
 	}
 
-	else if (op.attrib.runtime.isRegister)
+	else if (op.attrib.runtime.regValue != AddrMethod::NOT_APPLICABLE)
 	{
-		opStr << regString.at(op.attrib.runtime.regValue);
+		std::string next = regString.at(op.attrib.runtime.regValue);
+		opStr << next;
 	}
 
 	else if (op.attrib.runtime.isImmd)
