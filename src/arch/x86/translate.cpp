@@ -66,58 +66,31 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 {
 	auto line = std::stringstream();
 
-	std::cerr << instr;
-	
 	std::string mnemonic = instr.attrib.intrinsic.mnemonic;
-	std::transform(mnemonic.begin(), mnemonic.end(), mnemonic.begin(), ::tolower);
 	line << mnemonic;
 
-	line << '\t' << StringifyOperand(instr, instr.op1, true);
-	line << StringifyOperand(instr, instr.op2, false);
-	line << StringifyOperand(instr, instr.op3, false);
-	line << StringifyOperand(instr, instr.op4, false);
+    if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
+    {
+
+    }
+
+    if (instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
+    {
+
+    }
+
+    if (instr.op3.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
+    {
+
+    }
+
+    if (instr.op4.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
+    {
+
+    }
 
 	std::cout << line.str() << '\n' << '\n';
 	return line.str();
-}
-
-std::string Translator::StringifyOperand(const Instruction &instr, const Operand &op, const bool isOp1)
-{
-
-	auto opStr = std::stringstream();
-	opStr << "";
-
-	if (op.attrib.intrinsic.type == OperandType::NOT_APPLICABLE)
-	{
-		return "";
-	}
-
-	else if (op.attrib.runtime.regValue != AddrMethod::NOT_APPLICABLE)
-	{
-		std::string next = regString.at(op.attrib.runtime.regValue);
-		opStr << next;
-	}
-
-	else if (op.attrib.flags.isImmd)
-	{
-		opStr << "0x" << std::hex << instr.encoded.immd;
-	}
-
-	if (op.attrib.flags.isAddress)
-	{
-		std::string bracketStr = "[" + opStr.str() + "]";
-		opStr.str("");
-		opStr << bracketStr;
-	}
-
-	if (!isOp1 && opStr.str() != "")
-	{
-		std::string commaStr = "," + opStr.str();
-		opStr.str("");
-		opStr << commaStr;
-	}
-
-	return opStr.str();
 }
 
 };

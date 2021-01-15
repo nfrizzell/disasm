@@ -104,57 +104,6 @@ void LinearDecoder::ChangeState(funcptr newState)
 	state = newState;		
 }
 
-bool InstructionReference::Contains(Opcode opkey)
-{
-	return reference.find(opkey) != reference.end();
-}
-
-bool InstructionReference::ContainsPrimary(byte b)
-{
-	for (auto instr : reference)
-	{
-		if (instr.second.encoded.opcode.primary == b)
-		{
-			return true;
-		}
-	}
-			
-	return false;
-}
-
-Instruction InstructionReference::GetReference(Opcode opkey)
-{
-	if (reference.find(opkey) != reference.end())
-	{
-		return reference.at(opkey);
-	}
-
-	// Used for instructions which have an opcode extension, as otherwise
-	// they would not be located at this stage properly
-	auto copyWithOpcodeExtension = opkey;
-	copyWithOpcodeExtension.extension = 0;
-
-	if (reference.count(copyWithOpcodeExtension) > 0)
-	{
-		return reference.at(copyWithOpcodeExtension);
-	}
-
-	else
-	{
-		return Instruction {};
-		/*
-		std::stringstream err; 
-		err << std::hex << "Tried to lookup opcode that does not exist: " << opkey.mandatoryPrefix << " " << (int)opkey.twoByte << " " << opkey.primary << " " << opkey.secondary << " " << (int)opkey.extension;
-		throw std::runtime_error(err.str());
-		*/
-	}
-}
-
-void InstructionReference::Emplace(Opcode opkey, Instruction instruction)
-{
-	reference.emplace(opkey, instruction);
-}
-
 funcptr AddrMethodHandler::at(AddrMethod method)
 {
 	if (addrMethodHandlers.count(method) > 0)
@@ -174,7 +123,6 @@ funcptr AddrMethodHandler::at(AddrMethod method)
 	}
 }
 
-InstructionReference instrReference {};
 AddrMethodHandler addrMethodHandler {};
 
 std::unordered_map<ThreeByteKey, uint16_t, ThreeByteHash> threeByteReference {};
@@ -290,18 +238,16 @@ void Operands(LinearDecoder * context, Instruction &instr)
 {
 
 	// If the instruction has a first operand that hasn't been read yet
-	if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && !instr.attrib.flags.op1Read)
+    if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && !instr.attrib.flags.op1Read)
 	{
-		instr.activeOperand = &instr.op1;
-		context->ChangeState(addrMethodHandler.at(instr.op1.attrib.intrinsic.addrMethod));
+        context->ChangeState(addrMethodHandler.at(instr.op1.attrib.intrinsic.addrMethod));
 		instr.attrib.flags.op1Read = true;
 	}
 
 	// If the instruction has a second operand and the first has already been read
-	else if (instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && instr.attrib.flags.op1Read && !instr.attrib.flags.op2Read)
+    else if (instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && instr.attrib.flags.op1Read && !instr.attrib.flags.op2Read)
 	{
-		instr.activeOperand = &instr.op2;
-		context->ChangeState(addrMethodHandler.at(instr.op2.attrib.intrinsic.addrMethod));
+        context->ChangeState(addrMethodHandler.at(instr.op2.attrib.intrinsic.addrMethod));
 		instr.attrib.flags.op2Read = true;
 	}
 
@@ -322,7 +268,7 @@ void DecodeSuccess(LinearDecoder * context, Instruction &instr)
 		return;
 	}
 
-	instr.attrib.runtime.resolved = true;
+    instr.attrib.flags.resolved = true;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
 
@@ -338,7 +284,6 @@ void DecodeFailure(LinearDecoder * context, Instruction &instr)
 		return;
 	}
 
-	instr.attrib.runtime.resolved = false;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
 
@@ -401,17 +346,6 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		byte modrmByte = context->CurrentByte();
 		instr.InterpretModRMByte(modrmByte);
 	}
-	instr.activeOperand->attrib.flags.isRegister = true;
-	
-	// Retrieve the actual opext if it exists, replacing the placeholder
-	// Afterwards, update the relevant attributes (such as mnemonic) using 
-	// the new information
-	if (instr.encoded.opcode.extension != INVALID)
-	{
-		instr.encoded.opcode.extension = instr.encoded.modrm.regOpBits;
-		auto reference = instrReference.GetReference(instr.encoded.opcode);
-		instr.UpdateAttributes(reference);
-	}
 
 	if (instr.attrib.flags.hasSIB && !instr.attrib.flags.sibRead)
 	{
@@ -438,7 +372,6 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 
 			instr.encoded.disp += context->CurrentByte();
 		}
-		instr.activeOperand->attrib.flags.hasDisp = true;
 
 		instr.attrib.flags.dispRead = true;
 	}
@@ -466,10 +399,6 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 		byte modrmByte = context->CurrentByte();
 		instr.InterpretModRMByte(modrmByte);
 	}
-	
-	AddrMethod encodedReg = ModRMRegisterEncoding32.at(instr.encoded.modrm.regOpBits);
-	instr.activeOperand->attrib.flags.isRegister = true;
-	instr.activeOperand->attrib.runtime.regValue = encodedReg;
 
 	if (instr.attrib.flags.hasSIB && !instr.attrib.flags.sibRead)
 	{
@@ -510,8 +439,8 @@ void MethodH(LinearDecoder * context, Instruction &instr)
 // IMMD data
 void MethodI(LinearDecoder * context, Instruction &instr)
 {
-	bool sField = (bool)(instr.encoded.opcode.primary & 0b00000001);
-	bool xField = (bool)(instr.encoded.opcode.primary & 0b00000010);
+    bool sField = instr.encoded.opcode.primary & 0b00000001;
+    bool xField = instr.encoded.opcode.primary & 0b00000010;
 	int immdSize = 0;
 
 	if (sField)
@@ -539,7 +468,6 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 		instr.encoded.immd += (context->CurrentByte() << (8*i));
 	}
 	
-	instr.activeOperand->attrib.flags.isImmd = true;
 	context->ChangeState(Operands);
 }
 
@@ -658,15 +586,12 @@ void MethodZ(LinearDecoder * context, Instruction &instr)
 {
 	uint8_t relevantOpcodeSection = instr.encoded.opcode.primary & 0b00000111;
 	AddrMethod encodedReg = ModRMRegisterEncoding32.at(relevantOpcodeSection);
-	instr.activeOperand->attrib.flags.isRegister = true;
-	instr.activeOperand->attrib.runtime.regValue = encodedReg;
 
 	context->ChangeState(Operands);
 }
 
 void MethodRegister(LinearDecoder * context, Instruction &instr)
 {
-	instr.activeOperand->attrib.flags.isRegister = true;
 	context->ChangeState(Operands);
 }
 

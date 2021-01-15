@@ -215,11 +215,11 @@ Instruction ParseCSVLine(std::string line)
 			case CSV_COLUMNS::EXCLUSIVE:
 				if (field == "32")
 				{
-					instr.attrib.intrinsic.x86Exclusive = true;
+                    instr.attrib.intrinsic.x86Exclusive = true;
 				}
 				else if (field == "64")
 				{
-					instr.attrib.intrinsic.x64Exclusive = true;
+                    instr.attrib.intrinsic.x64Exclusive = true;
 				}
 
 				break;
@@ -227,28 +227,28 @@ Instruction ParseCSVLine(std::string line)
 				instr.attrib.intrinsic.brief = field;
 				break;
 			case CSV_COLUMNS::OP1_M:
-				instr.op1.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
+                instr.op1.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
 				break;
 			case CSV_COLUMNS::OP1_T:
-				instr.op1.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
+                instr.op1.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
 				break;
 			case CSV_COLUMNS::OP2_M:
-				instr.op2.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
+                instr.op2.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
 				break;
 			case CSV_COLUMNS::OP2_T:
-				instr.op2.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
+                instr.op2.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
 				break;
 			case CSV_COLUMNS::OP3_M:
-				instr.op3.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
+                instr.op3.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
 				break;
 			case CSV_COLUMNS::OP3_T:
-				instr.op3.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
+                instr.op3.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
 				break;
 			case CSV_COLUMNS::OP4_M:
-				instr.op4.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
+                instr.op4.attrib.intrinsic.addrMethod = static_cast<AddrMethod>(ParseAsValue(field, 10));
 				break;
 			case CSV_COLUMNS::OP4_T:
-				instr.op4.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
+                instr.op4.attrib.intrinsic.type = static_cast<OperandType>(ParseAsValue(field, 10));
 				break;
 			default:
 				throw std::logic_error("Missed a column when implementing CSV parsing: " + std::to_string(column));
@@ -324,8 +324,8 @@ void threeByteOpcodeCSVParse()
 		}	
 
 		bool twoByte = ParseAsBool(csvValues.at(0));
-		uint16_t primary = ParseAsValue(csvValues.at(1));
-		uint16_t secondary = ParseAsValue(csvValues.at(2));
+        int16_t primary = ParseAsValue(csvValues.at(1));
+        int16_t secondary = ParseAsValue(csvValues.at(2));
 		ThreeByteKey tbk = { twoByte, primary };
 		threeByteReference[tbk] = secondary;
 	}

@@ -92,21 +92,6 @@ private:
 	std::vector<Instruction> instructions {}; // Decoded instructions or data segments
 };
 
-class InstructionReference
-{
-public:
-	bool Contains(Opcode opkey);
-	bool ContainsPrimary(byte b);
-	Instruction GetReference(Opcode opkey);
-	void Emplace(Opcode opkey, Instruction instr);
-	int size() { return reference.size(); }
-	int count(Opcode key) { return reference.count(key); }
-
-private:
-	// Loaded at runtime from the relevant .csv file
-	std::unordered_map<Opcode, Instruction, OpcodeHash> reference;
-};
-
 using namespace State_x86;	
 
 class AddrMethodHandler
@@ -116,49 +101,48 @@ public:
 
 private:
 
-	const std::map<AddrMethod, funcptr> addrMethodHandlers
-	{
-		{ AddrMethod::NOT_APPLICABLE, MethodError },
+    const std::map<AddrMethod, funcptr> addrMethodHandlers
+    {
+        { AddrMethod::NOT_APPLICABLE, MethodError },
 
-		{ AddrMethod::A, MethodA },
-		{ AddrMethod::B, MethodB },
-		{ AddrMethod::C, MethodC },
-		{ AddrMethod::D, MethodD },
-		{ AddrMethod::E, MethodE },
-		{ AddrMethod::F, MethodF },
-		{ AddrMethod::G, MethodG },
-		{ AddrMethod::H, MethodH },
-		{ AddrMethod::I, MethodI },
-		{ AddrMethod::J, MethodJ },
+        { AddrMethod::A, MethodA },
+        { AddrMethod::B, MethodB },
+        { AddrMethod::C, MethodC },
+        { AddrMethod::D, MethodD },
+        { AddrMethod::E, MethodE },
+        { AddrMethod::F, MethodF },
+        { AddrMethod::G, MethodG },
+        { AddrMethod::H, MethodH },
+        { AddrMethod::I, MethodI },
+        { AddrMethod::J, MethodJ },
 
-		{ AddrMethod::L, MethodL },
-		{ AddrMethod::M, MethodM },
-		{ AddrMethod::N, MethodN },
-		{ AddrMethod::O, MethodO },
-		{ AddrMethod::P, MethodP },
-		{ AddrMethod::Q, MethodQ },
-		{ AddrMethod::R, MethodR },
-		{ AddrMethod::S, MethodS },
+        { AddrMethod::L, MethodL },
+        { AddrMethod::M, MethodM },
+        { AddrMethod::N, MethodN },
+        { AddrMethod::O, MethodO },
+        { AddrMethod::P, MethodP },
+        { AddrMethod::Q, MethodQ },
+        { AddrMethod::R, MethodR },
+        { AddrMethod::S, MethodS },
 
-		{ AddrMethod::U, MethodU },
-		{ AddrMethod::V, MethodV },
-		{ AddrMethod::W, MethodW },
-		{ AddrMethod::X, MethodX },
-		{ AddrMethod::Y, MethodY },
+        { AddrMethod::U, MethodU },
+        { AddrMethod::V, MethodV },
+        { AddrMethod::W, MethodW },
+        { AddrMethod::X, MethodX },
+        { AddrMethod::Y, MethodY },
 
-		{ AddrMethod::Z, MethodZ },
-		{ AddrMethod::BA, MethodUnimplemented },
-		{ AddrMethod::BB, MethodUnimplemented },
-		{ AddrMethod::BD, MethodUnimplemented },
-		{ AddrMethod::ES_, MethodUnimplemented  },
-		{ AddrMethod::EST, MethodUnimplemented },
-		{ AddrMethod::SC, MethodUnimplemented },
-		{ AddrMethod::T, MethodUnimplemented }
-	};
+        { AddrMethod::Z, MethodZ },
+        { AddrMethod::BA, MethodUnimplemented },
+        { AddrMethod::BB, MethodUnimplemented },
+        { AddrMethod::BD, MethodUnimplemented },
+        { AddrMethod::ES_, MethodUnimplemented  },
+        { AddrMethod::EST, MethodUnimplemented },
+        { AddrMethod::SC, MethodUnimplemented },
+        { AddrMethod::T, MethodUnimplemented }
+    };
 };
 
 extern AddrMethodHandler addrMethodHandler;
-extern InstructionReference instrReference;
 extern std::unordered_map<ThreeByteKey, uint16_t, ThreeByteHash> threeByteReference;
 
 };
