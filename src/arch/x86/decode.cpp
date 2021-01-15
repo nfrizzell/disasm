@@ -290,19 +290,19 @@ void Operands(LinearDecoder * context, Instruction &instr)
 {
 
 	// If the instruction has a first operand that hasn't been read yet
-	if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && !instr.attrib.runtime.op1Read)
+	if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && !instr.attrib.flags.op1Read)
 	{
 		instr.activeOperand = &instr.op1;
 		context->ChangeState(addrMethodHandler.at(instr.op1.attrib.intrinsic.addrMethod));
-		instr.attrib.runtime.op1Read = true;
+		instr.attrib.flags.op1Read = true;
 	}
 
 	// If the instruction has a second operand and the first has already been read
-	else if (instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && instr.attrib.runtime.op1Read && !instr.attrib.runtime.op2Read)
+	else if (instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && instr.attrib.flags.op1Read && !instr.attrib.flags.op2Read)
 	{
 		instr.activeOperand = &instr.op2;
 		context->ChangeState(addrMethodHandler.at(instr.op2.attrib.intrinsic.addrMethod));
-		instr.attrib.runtime.op2Read = true;
+		instr.attrib.flags.op2Read = true;
 	}
 
 	// Either there are no operands and decoding is finished, or the operand(s) have been
@@ -322,7 +322,6 @@ void DecodeSuccess(LinearDecoder * context, Instruction &instr)
 		return;
 	}
 
-	//std::cerr << std::dec << instr.attrib.intrinsic.mnemonic << " " << (int)instr.op1.attrib.intrinsic.addrMethod << " " << (int)instr.op2.attrib.intrinsic.addrMethod << " " << (int)instr.op3.attrib.intrinsic.addrMethod << " " << (int)instr.op4.attrib.intrinsic.addrMethod << '\n';
 	instr.attrib.runtime.resolved = true;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
@@ -390,7 +389,7 @@ void MethodD(LinearDecoder * context, Instruction &instr)
 
 void MethodE(LinearDecoder * context, Instruction &instr)
 {
-	if (!instr.attrib.runtime.modRMRead)
+	if (!instr.attrib.flags.modRMRead)
 	{
 		// Get the ModRM byte
 		if (!context->NextByte())
@@ -402,7 +401,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		byte modrmByte = context->CurrentByte();
 		instr.InterpretModRMByte(modrmByte);
 	}
-	instr.activeOperand->attrib.runtime.isRegister = true;
+	instr.activeOperand->attrib.flags.isRegister = true;
 	
 	// Retrieve the actual opext if it exists, replacing the placeholder
 	// Afterwards, update the relevant attributes (such as mnemonic) using 
@@ -414,7 +413,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		instr.UpdateAttributes(reference);
 	}
 
-	if (instr.attrib.runtime.hasSIB && !instr.attrib.runtime.sibRead)
+	if (instr.attrib.flags.hasSIB && !instr.attrib.flags.sibRead)
 	{
 		// Get SIB byte
 		if (!context->NextByte())
@@ -427,7 +426,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		instr.InterpretSIBByte(sibByte);
 	}
 
-	if (instr.attrib.runtime.hasDisplacement && !instr.attrib.runtime.dispRead)
+	if (instr.attrib.flags.hasDisplacement && !instr.attrib.flags.dispRead)
 	{
 		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
 		{
@@ -439,7 +438,9 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 
 			instr.encoded.disp += context->CurrentByte();
 		}
-		instr.attrib.runtime.dispRead = true;
+		instr.activeOperand->attrib.flags.hasDisp = true;
+
+		instr.attrib.flags.dispRead = true;
 	}
 
 	context->ChangeState(Operands);
@@ -453,7 +454,7 @@ void MethodF(LinearDecoder * context, Instruction &instr)
 
 void MethodG(LinearDecoder * context, Instruction &instr)
 {
-	if (!instr.attrib.runtime.modRMRead)
+	if (!instr.attrib.flags.modRMRead)
 	{
 		// Get the ModRM byte
 		if (!context->NextByte())
@@ -467,10 +468,10 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 	}
 	
 	AddrMethod encodedReg = ModRMRegisterEncoding32.at(instr.encoded.modrm.regOpBits);
-	instr.activeOperand->attrib.runtime.isRegister = true;
+	instr.activeOperand->attrib.flags.isRegister = true;
 	instr.activeOperand->attrib.runtime.regValue = encodedReg;
 
-	if (instr.attrib.runtime.hasSIB && !instr.attrib.runtime.sibRead)
+	if (instr.attrib.flags.hasSIB && !instr.attrib.flags.sibRead)
 	{
 		// Get SIB byte
 		if (!context->NextByte())
@@ -483,7 +484,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 		instr.InterpretSIBByte(sibByte);
 	}
 
-	if (instr.attrib.runtime.hasDisplacement && !instr.attrib.runtime.dispRead)
+	if (instr.attrib.flags.hasDisplacement && !instr.attrib.flags.dispRead)
 	{
 		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
 		{
@@ -495,7 +496,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 
 			instr.encoded.disp += context->CurrentByte();
 		}
-		instr.attrib.runtime.dispRead = true;
+		instr.attrib.flags.dispRead = true;
 	}
 	context->ChangeState(Operands);
 }
@@ -538,7 +539,7 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 		instr.encoded.immd += (context->CurrentByte() << (8*i));
 	}
 	
-	instr.activeOperand->attrib.runtime.isImmd = true;
+	instr.activeOperand->attrib.flags.isImmd = true;
 	context->ChangeState(Operands);
 }
 
@@ -657,7 +658,7 @@ void MethodZ(LinearDecoder * context, Instruction &instr)
 {
 	uint8_t relevantOpcodeSection = instr.encoded.opcode.primary & 0b00000111;
 	AddrMethod encodedReg = ModRMRegisterEncoding32.at(relevantOpcodeSection);
-	instr.activeOperand->attrib.runtime.isRegister = true;
+	instr.activeOperand->attrib.flags.isRegister = true;
 	instr.activeOperand->attrib.runtime.regValue = encodedReg;
 
 	context->ChangeState(Operands);
@@ -665,7 +666,7 @@ void MethodZ(LinearDecoder * context, Instruction &instr)
 
 void MethodRegister(LinearDecoder * context, Instruction &instr)
 {
-	instr.activeOperand->attrib.runtime.isRegister = true;
+	instr.activeOperand->attrib.flags.isRegister = true;
 	context->ChangeState(Operands);
 }
 

@@ -244,45 +244,6 @@ bool Opcode::operator==(const Opcode &rhs) const
 		extension == rhs.extension);
 }
 
-void Operand::UpdateSize(std::array<byte, 4> &prefixes)
-{
-	if (attrib.intrinsic.type == OperandType::NOT_APPLICABLE)
-	{
-		attrib.intrinsic.size = 0;
-		return;
-	}
-
-	bool addrSizePrefix {};
-	bool operandSizePrefix {}; 
-	bool REXPrefix {};
-
-	for (auto prefix : prefixes)
-	{
-		if (prefix == 0x66)
-		{
-			addrSizePrefix = true;
-		}
-		
-		else if (prefix == 0x67)
-		{
-			operandSizePrefix = true;
-		}
-	}
-
-	bool isPrefix = addrSizePrefix || operandSizePrefix;
-	
-	if (REXPrefix)
-	{
-		//attrib.intrinsic.size = typeSize64.at(attrib.intrinsic.type);
-	}
-
-	else
-	{
-		attrib.intrinsic.size = isPrefix ? typeSize32.at(attrib.intrinsic.type) : typeSize16.at(attrib.intrinsic.type);
-	}
-
-}
-
 std::size_t OpcodeHash::operator()(const Opcode &op) const
 {
 	auto ss = std::stringstream();
@@ -315,39 +276,28 @@ void Instruction::UpdateAttributes(const Instruction &reference)
 	encoded.opcode.extension = reference.encoded.opcode.extension;
 
 	op1.attrib.intrinsic = reference.op1.attrib.intrinsic;
-	op1.attrib.runtime.isRegister = reference.op1.attrib.runtime.isRegister;
-	op1.UpdateSize(encoded.prefix);
+	op1.attrib.flags.isRegister = reference.op1.attrib.flags.isRegister;
 
 	op2.attrib.intrinsic = reference.op2.attrib.intrinsic;
-	op2.attrib.runtime.isRegister = reference.op2.attrib.runtime.isRegister;
-	op2.UpdateSize(encoded.prefix);
+	op2.attrib.flags.isRegister = reference.op2.attrib.flags.isRegister;
 
 	op3.attrib.intrinsic = reference.op3.attrib.intrinsic;
-	op3.attrib.runtime.isRegister = reference.op3.attrib.runtime.isRegister;
-	op3.UpdateSize(encoded.prefix);
+	op3.attrib.flags.isRegister = reference.op3.attrib.flags.isRegister;
 
 	op4.attrib.intrinsic = reference.op4.attrib.intrinsic;
-	op4.attrib.runtime.isRegister = reference.op4.attrib.runtime.isRegister;
-	op4.UpdateSize(encoded.prefix);
+	op4.attrib.flags.isRegister = reference.op4.attrib.flags.isRegister;
 }
 
 void Instruction::InterpretModRMByte(const byte modrmByte)
 {
-	attrib.runtime.modRMRead = true;
+	attrib.flags.modRMRead = true;
 
 	// The field in the ModR/M byte to read from to get the relevant encoded operand
-	uint8_t * operandField = &encoded.modrm.regOpBits;
-
 	// If either operand is of type immediate, change the ModR/M field to be read from to
 	// R/M, since REG is used by the opcode instead
 	// ...
 	// If the ModRM byte has already been read (op1 and op2 both need to read it), also
 	// do this, since the operand to be checked will be encoded in a different field
-	if ((op1.attrib.intrinsic.addrMethod == AddrMethod::I || op2.attrib.intrinsic.addrMethod == AddrMethod::I) || attrib.runtime.modRMRead || encoded.opcode.extension != INVALID)
-	{
-		operandField = &encoded.modrm.rmBits;
-	}
-
 	// Bit-shifted for easier comparisons
 	// Right bit shift on an unsigned integer results in a logical right shift
 	encoded.modrm.modBits   = (modrmByte & 0b11000000) >> 6; 
@@ -356,78 +306,43 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 
 	if (encoded.modrm.modBits == 0b00)
 	{
-		if (encoded.modrm.rmBits == 0b000 || encoded.modrm.rmBits == 0b111)
+		if (encoded.modrm.rmBits == 0b101)
 		{
-			activeOperand->attrib.runtime.isAddress = true;
-			attrib.runtime.hasDisplacement = false;
-		}
-
-		else if (encoded.modrm.rmBits == 0b100)
-		{
-			activeOperand->attrib.runtime.isAddress = true;
-			attrib.runtime.hasDisplacement = false;
-		}
-
-		else if (encoded.modrm.rmBits == 0b101)
-		{
-			attrib.runtime.hasDisplacement = true;
+			attrib.flags.hasDisplacement = true;
+			attrib.runtime.displacementSize = 4;
 		}
 	}
 
 	// Operand is located at a memory address found by combining a specified register and a one-byte displacement
 	else if (encoded.modrm.modBits == 0b01)
 	{
-		activeOperand->attrib.runtime.isAddress = true;
-		activeOperand->attrib.runtime.isRegister = false;
-		attrib.runtime.hasDisplacement = true;
+		attrib.flags.hasDisplacement = true;
 		attrib.runtime.displacementSize = 1;
 	}
 	
 	// Operand is located at a memory address found by combining a specified register and a four-byte displacement
 	else if (encoded.modrm.modBits == 0b10)
 	{
-		activeOperand->attrib.runtime.isAddress = true;
-		activeOperand->attrib.runtime.isRegister = false;
-		attrib.runtime.hasDisplacement = true;
+		attrib.flags.hasDisplacement = true;
 		attrib.runtime.displacementSize = 4;
 	}
 
-	else if (encoded.modrm.modBits == 0b11)
-	{
-		activeOperand->attrib.runtime.isAddress = false;
-		activeOperand->attrib.runtime.isRegister = true;
-		attrib.runtime.hasDisplacement = false;
-		if (op1.attrib.intrinsic.size < 2 ) // 8 bit operand 
-		{
-			activeOperand->attrib.runtime.regValue = ModRMRegisterEncoding8.at(*operandField);
-		}
-		
-		else // Default to 32-bit for now
-		{
-			activeOperand->attrib.runtime.regValue = ModRMRegisterEncoding32.at(*operandField);
-		}
-	}
-
+	// SIB follows
 	if (encoded.modrm.modBits != 0b11 && encoded.modrm.rmBits == 0b100)
 	{
-		attrib.runtime.hasSIB = true;
+		attrib.flags.hasSIB = true;
 	}
 }
 
 void Instruction::InterpretSIBByte(byte sibByte)
-// Hardcoded as op2 because in all instructions that use the SIB it will be used for op2 (?)
 {
-	attrib.runtime.sibRead = true;
+	attrib.flags.sibRead = true;
 
 	// Bit-shifted for easier comparisons
 	// Right bit shift on an unsigned integer results in a logical right shift
 	encoded.sib.scaleBits = (sibByte & 0b11000000) >> 6;
 	encoded.sib.indexBits = (sibByte & 0b00111000) >> 3;
 	encoded.sib.baseBits  = (sibByte & 0b00000111);
-
-	// Scale
-	op2.attrib.runtime.sibScaleFactor = std::pow(2, encoded.sib.scaleBits);
-	op2.attrib.runtime.sibCompliment = SIBIndex.at(encoded.sib.indexBits);
 
 	// Base
 	if (encoded.sib.baseBits == 0b101 && encoded.modrm.modBits == 0b00)
@@ -437,14 +352,13 @@ void Instruction::InterpretSIBByte(byte sibByte)
 	}
 
 	else if (encoded.sib.baseBits == 0b101 && (encoded.modrm.modBits == 0b10 && encoded.modrm.modBits == 0b01))
-	// EBP
 	{
-		op2.attrib.runtime.regValue = AddrMethod::EBP;
+		//op2.attrib.runtime.regValue = AddrMethod::EBP;
 	}
 
 	else
 	{
-		op2.attrib.runtime.regValue = SIBBase.at(encoded.sib.baseBits);
+		//op2.attrib.runtime.regValue = SIBBase.at(encoded.sib.baseBits);
 	}
 }
 

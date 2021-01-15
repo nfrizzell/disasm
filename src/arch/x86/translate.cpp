@@ -65,6 +65,8 @@ std::vector<std::string> Translator::TranslateToASM()
 std::string Translator::StringifyInstruction(const Instruction &instr)
 {
 	auto line = std::stringstream();
+
+	std::cerr << instr;
 	
 	std::string mnemonic = instr.attrib.intrinsic.mnemonic;
 	std::transform(mnemonic.begin(), mnemonic.end(), mnemonic.begin(), ::tolower);
@@ -75,12 +77,13 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 	line << StringifyOperand(instr, instr.op3, false);
 	line << StringifyOperand(instr, instr.op4, false);
 
-	std::cout << line.str() << '\n';
+	std::cout << line.str() << '\n' << '\n';
 	return line.str();
 }
 
 std::string Translator::StringifyOperand(const Instruction &instr, const Operand &op, const bool isOp1)
 {
+
 	auto opStr = std::stringstream();
 	opStr << "";
 
@@ -95,12 +98,12 @@ std::string Translator::StringifyOperand(const Instruction &instr, const Operand
 		opStr << next;
 	}
 
-	else if (op.attrib.runtime.isImmd)
+	else if (op.attrib.flags.isImmd)
 	{
 		opStr << "0x" << std::hex << instr.encoded.immd;
 	}
 
-	if (op.attrib.runtime.isAddress)
+	if (op.attrib.flags.isAddress)
 	{
 		std::string bracketStr = "[" + opStr.str() + "]";
 		opStr.str("");

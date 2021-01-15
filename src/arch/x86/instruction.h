@@ -309,28 +309,28 @@ public:
 		{
 			AddrMethod addrMethod {AddrMethod::NOT_APPLICABLE}; 
 			OperandType type {OperandType::NOT_APPLICABLE}; 
-			uint8_t size {}; // Size of operand in bytes
 
 		} intrinsic {};
 
 		struct Runtime
 		{
-			bool isAddress {}; // If an operand value is a memory address
-			bool isRegister {}; // If operand value is a hardcoded/encoded register
-			bool isImmd {}; // If the operand value is immediate data
 			uint8_t opcodeLength {};
+
 			// If the operand is a register, the register used will be stored here
 			AddrMethod regValue {AddrMethod::NOT_APPLICABLE};
 
-			// Applicable to SIB mode only
-			uint8_t sibScaleFactor {}; // Size of optional SIB scale factor (1/2/4/8)
-			AddrMethod sibCompliment {AddrMethod::NOT_APPLICABLE}; // SIB index reg
-
 		} runtime {};
 
+		struct Flags
+		{
+			bool isAddress {}; // If an operand value is a memory address
+			bool isRegister {}; // If operand value is a hardcoded/encoded register
+			bool isImmd {}; // If the operand value is immediate data
+			bool hasDisp {}; // If the operand has a displacement included
+
+		} flags {};
+
 	} attrib {};
-	
-	void UpdateSize(std::array<byte, 4> &prefixes);
 };
 
 class Instruction
@@ -378,6 +378,11 @@ public:
 			uint8_t displacementSize {}; // Size of displacement in bytes  
 
 			bool resolved {}; // If the instruction has been successfully read
+			
+		} runtime {};
+
+		struct Flags
+		{
 			bool hasSIB {};
 			bool hasDisplacement {};
 			bool op1Read {}; // Check if op1 has been read before op2
@@ -385,8 +390,7 @@ public:
 			bool modRMRead {};
 			bool sibRead {};
 			bool dispRead {};
-
-		} runtime {};
+		} flags {};
 
 	} attrib {};
 
