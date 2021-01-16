@@ -46,6 +46,10 @@ std::size_t ThreeByteHash::operator()(const ThreeByteKey &tbk) const
 void Instruction::UpdateAttributes(const Instruction &reference)
 {
 	attrib.intrinsic = reference.attrib.intrinsic;
+	op1 = reference.op1;
+	op2 = reference.op2;
+	op3 = reference.op3;
+	op4 = reference.op4;
 	encoded.opcode.extension = reference.encoded.opcode.extension;
 }
 
@@ -61,6 +65,7 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
 	// do this, since the operand to be checked will be encoded in a different field
 	// Bit-shifted for easier comparisons
 	// Right bit shift on an unsigned integer results in a logical right shift
+
 	encoded.modrm.modBits   = (modrmByte & 0b11000000) >> 6; 
 	encoded.modrm.regOpBits = (modrmByte & 0b00111000) >> 3;
 	encoded.modrm.rmBits    = (modrmByte & 0b00000111);
@@ -97,12 +102,14 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
     // Retrieve the actual opext if it exists, replacing the placeholder
     // Afterwards, update the relevant attributes (such as mnemonic) using
     // the new information
-    if (encoded.opcode.extension != INVALID)
-    {
-        encoded.opcode.extension = encoded.modrm.regOpBits;
-        auto reference = instrReference.GetReference(encoded.opcode);
-        UpdateAttributes(reference);
-    }
+	if (encoded.opcode.extension != INVALID)
+	{
+
+		encoded.opcode.extension = encoded.modrm.regOpBits;
+		auto reference = instrReference.GetReference(encoded.opcode);
+		UpdateAttributes(reference);
+	}
+
 }
 
 void Instruction::InterpretSIBByte(byte sibByte)

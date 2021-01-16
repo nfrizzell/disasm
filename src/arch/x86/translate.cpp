@@ -67,7 +67,7 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 	auto line = std::stringstream();
 
 	std::string mnemonic = instr.attrib.intrinsic.mnemonic;
-	line << mnemonic;
+
 
     if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
     {
@@ -89,7 +89,14 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 
     }
 
-	std::cout << line.str() << '\n' << '\n';
+	for (auto b : instr.encoded.encodedSequence)
+	{
+		line << std::hex << (int)b << " ";
+	}
+
+	line << '\n' << mnemonic << '\n';
+
+	std::cout << line.str() << '\n';
 	return line.str();
 }
 

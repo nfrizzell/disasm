@@ -51,6 +51,8 @@ unsigned int LinearDecoder::ByteOffset()
 
 bool __attribute__((warn_unused_result)) LinearDecoder::NextByte()
 {
+	currentInstr.encoded.encodedSequence.push_back(currentByte);
+
 	if (byteOffset + 1 < section->size())
 	{
 		byteOffset++;
@@ -236,7 +238,6 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 
 void Operands(LinearDecoder * context, Instruction &instr)
 {
-
 	// If the instruction has a first operand that hasn't been read yet
     if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && !instr.attrib.flags.op1Read)
 	{
@@ -268,7 +269,7 @@ void DecodeSuccess(LinearDecoder * context, Instruction &instr)
 		return;
 	}
 
-    instr.attrib.flags.resolved = true;
+	instr.attrib.flags.resolved = true;
 	instr.attrib.runtime.size = (context->ByteOffset() - instr.attrib.runtime.segmentByteOffset) + 1;
 	context->NextInstruction(); // Handle parsed instruction and prepare for new one
 
@@ -336,6 +337,7 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 {
 	if (!instr.attrib.flags.modRMRead)
 	{
+
 		// Get the ModRM byte
 		if (!context->NextByte())
 		{
@@ -389,6 +391,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 {
 	if (!instr.attrib.flags.modRMRead)
 	{
+
 		// Get the ModRM byte
 		if (!context->NextByte())
 		{
@@ -427,6 +430,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 		}
 		instr.attrib.flags.dispRead = true;
 	}
+
 	context->ChangeState(Operands);
 }
  

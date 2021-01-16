@@ -253,20 +253,20 @@ bool InstructionReference::ContainsPrimary(byte b)
 
 Instruction InstructionReference::GetReference(Opcode opkey)
 {
-    if (instrReferenceMap.find(opkey) != instrReferenceMap.end())
-    {
-        return instrReferenceMap.at(opkey);
-    }
+	if (instrReferenceMap.find(opkey) != instrReferenceMap.end())
+	{
+		return instrReferenceMap.at(opkey);
+	}
 
-    // Used for instructions which have an opcode extension, as otherwise
-    // they would not be located at this stage properly
-    auto copyWithOpcodeExtension = opkey;
-    copyWithOpcodeExtension.extension = 0;
+	// Used for instructions which have an opcode extension, as otherwise
+	// they would not be located at this stage properly
+	auto copyWithOpcodeExtension = opkey;
+	copyWithOpcodeExtension.extension = 0;
 
-    if (instrReferenceMap.count(copyWithOpcodeExtension) > 0)
-    {
-        return instrReferenceMap.at(copyWithOpcodeExtension);
-    }
+	if (instrReferenceMap.count(copyWithOpcodeExtension) > 0)
+	{
+		return instrReferenceMap.at(copyWithOpcodeExtension);
+	}
 
     else
     {

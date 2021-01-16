@@ -84,7 +84,7 @@ public:
         struct Runtime
         {
             Encoding encoding {Encoding::NOT_APPLICABLE};
-        } runtime;
+		} runtime {};
 
 	} attrib {};
 };
@@ -156,6 +156,7 @@ public:
 	struct EncodedData
 	// The actual encoded byte data of each instruction
 	{
+		std::vector<byte> encodedSequence {};
 		std::array<byte, 4> prefix {};
 		Opcode opcode {};
 
