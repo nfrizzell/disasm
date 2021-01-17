@@ -2,6 +2,7 @@
 #include <sstream>
 #include <algorithm>
 #include <string>
+#include <iomanip>
 
 namespace ISet_x86
 {
@@ -64,9 +65,16 @@ std::vector<std::string> Translator::TranslateToASM()
 
 std::string Translator::StringifyInstruction(const Instruction &instr)
 {
-	auto line = std::stringstream();
+	std::stringstream line {};
 
-	line << instr.attrib.intrinsic.mnemonic;
+	line << std::setw(32) << std::left;
+	std::stringstream bytes {};
+	for (int i = instr.attrib.runtime.segmentByteOffset; i < instr.attrib.runtime.segmentByteOffset + instr.attrib.runtime.size; i++)
+	{
+		bytes << std::hex << (int)section->at(i) << " ";
+	}
+
+	line << bytes.str() << instr.attrib.intrinsic.mnemonic;
 
     if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
     {
@@ -92,12 +100,6 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 		line << "," << opStr;
     }
 
-	line << '\n';
-	for (int i = instr.attrib.runtime.segmentByteOffset; i < instr.attrib.runtime.segmentByteOffset + instr.attrib.runtime.size; i++)
-	{
-		line << std::hex << (int)section->at(i) << " ";
-	}
-
 	std::cout << line.str() << "\n\n";
 	return line.str();
 }
@@ -109,6 +111,15 @@ std::string Translator::StringifyOperand(const Instruction &instr, const Operand
 		std::stringstream immdStrStrm;
 		immdStrStrm << "0x" << std::hex << instr.encoded.immd;
 		return immdStrStrm.str();
+	}
+
+	if (op.attrib.runtime.encoding == Operand::RELATIVE_DISPLACEMENT)
+	{
+		std::stringstream addrStrStrm;
+		int relativeAddress = section->at(instr.attrib.runtime.segmentByteOffset + instr.attrib.runtime.size);
+
+		addrStrStrm << "<0x" << std::hex << relativeAddress << " + relative address>";
+		return addrStrStrm.str();
 	}
 
 	else if (op.attrib.runtime.encoding == Operand::OPCODE_REGISTER)

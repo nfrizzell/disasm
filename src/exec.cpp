@@ -13,8 +13,8 @@ Executable::Executable(std::string path)
 	format = Format::NewFormat(binDump, type);
 	format->LoadMetadata(metadata);
 
-	std::map<std::string, std::vector<byte>> * codeSegment = format->GetCodeSegment();
-	arch = Arch::NewArch(codeSegment, metadata.arch);
+	Segment seg = format->GetCodeSegment();
+	arch = Arch::NewArch(seg, metadata.arch);
 	std::vector<std::string> assembly = arch->TranslateToAssembly();
 }
 

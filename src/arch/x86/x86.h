@@ -12,7 +12,7 @@
 class Arch_x86 final : public Arch
 {
 public:
-	Arch_x86(const std::map<std::string, std::vector<byte>> * dataSegment);
+	Arch_x86(Segment segment);
 
 	std::vector<std::string> TranslateToAssembly();
 	std::vector<std::string> TranslateToSource();

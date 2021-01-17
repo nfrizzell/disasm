@@ -16,7 +16,7 @@ public:
 	static std::unique_ptr<FormatELF> NewFormatELF(const std::vector<byte> * binDump);
 	static bool IsFormat(const std::vector<byte> * binDump);
 	void LoadMetadata(Metadata &metadata);
-	std::map<std::string, std::vector<byte>> * GetCodeSegment();
+	Segment GetCodeSegment();
 protected:
 	// Using the 64-bit version of ELF structs because they work for both architectures
 	// and allow for code reuse through inheritance, keep this in mind before using

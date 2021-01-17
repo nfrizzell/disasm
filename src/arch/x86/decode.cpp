@@ -513,7 +513,7 @@ void MethodJ(LinearDecoder * context, Instruction &instr)
 		instr.encoded.immd += (context->CurrentByte() << (8*i));
 	}
 
-	instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::IMMD;
+	instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::RELATIVE_DISPLACEMENT;
 	context->ChangeState(Operands);
 }
 

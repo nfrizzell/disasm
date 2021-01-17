@@ -89,10 +89,11 @@ std::array<byte, EI_NIDENT> FormatELF::LoadIdent(const std::vector<byte> * binDu
 
 	return ident;
 }	
-std::map<std::string, std::vector<byte>> * FormatELF::GetCodeSegment()
+Segment FormatELF::GetCodeSegment()
 {
+	Segment segment {};
 	const std::vector<std::string> id = {".plt", ".plt.got", ".init", ".text", ".fini"};
-	auto * machineCode = new std::map<std::string, std::vector<byte>>;
+	segment.seg = new std::map<std::string, std::vector<byte>>;
 
 	auto sstOff = sectionHeaders[elfHeader.e_shstrndx].sh_offset; // Section name string table
 	for (auto sh : sectionHeaders)
@@ -103,11 +104,11 @@ std::map<std::string, std::vector<byte>> * FormatELF::GetCodeSegment()
 			auto begin = binDump->begin() + sh.sh_offset;
 			auto end = begin + sh.sh_size;
 			auto sectionCode = std::vector<byte>(begin, end);
-			machineCode->insert({name, sectionCode});
+			segment.seg->insert({name, sectionCode});
 		}
 	}
-	
-	return machineCode;
+
+	return segment;
 }
 
 std::string FormatELF::LoadStringTableEntry(unsigned long strTabOff, unsigned long entryOff)

@@ -1,16 +1,14 @@
 #include "arch.h"
 #include "x86/x86.h"
 
-std::unique_ptr<Arch> Arch::NewArch(const std::map<std::string, std::vector<byte>> * section, ArchType type)
+std::unique_ptr<Arch> Arch::NewArch(Segment seg, ArchType type)
 {
 	switch (type)
 	{
 		case (ArchType::x86):
-			return std::make_unique<Arch_x86>(section);
+			return std::make_unique<Arch_x86>(seg);
 		default:
-			return std::make_unique<Arch_x86>(section);
-
+			throw std::runtime_error("Executable architecture not supported.");
 	}
-	
 }
 

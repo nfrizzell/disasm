@@ -69,6 +69,7 @@ public:
     {
         NOT_APPLICABLE = INVALID,
 		IMMD = 0,
+		RELATIVE_DISPLACEMENT,
 		OPCODE_REGISTER,
 		MODRM_REGISTER_REGBITS,
 		MODRM_REGISTER_RMBITS, // When the REG and RM fields of the ModRM byte are flipped

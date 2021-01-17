@@ -9,7 +9,7 @@
 using namespace ISet_x86;
 
 // ***** Arch_x86 *****
-Arch_x86::Arch_x86(const std::map<std::string, std::vector<byte>> * segment)
+Arch_x86::Arch_x86(Segment segment)
 {
 	x86CSVParse(instrReference);
 	threeByteOpcodeCSVParse();
@@ -21,7 +21,8 @@ std::vector<std::string> Arch_x86::TranslateToAssembly()
 {
 	assembly = std::vector<std::string>();
 
-	for (auto section : (*segment))
+	int absoluteOffset = 0;
+	for (auto section : (*segment.seg))
 	{
 		if (section.first == ".text")
 		{
