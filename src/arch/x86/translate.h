@@ -12,15 +12,16 @@ class Translator
 // Intel syntax
 {
 public:
-	Translator(std::vector<Instruction> decodedInstrs);
+	Translator(std::vector<Instruction> decodedInstrs, std::vector<byte> * section);
 
 	std::vector<std::string> TranslateToASM();
 
 private:
 	std::vector<Instruction> decodedInstrs;
+	std::vector<byte> * section;
 
 	std::string StringifyInstruction(const Instruction &instr);
-	std::string StringifyOperand(const Instruction &instr, const Operand &op, const bool isOp1);
+	std::string StringifyOperand(const Instruction &instr, const Operand &op);
 };
 
 };

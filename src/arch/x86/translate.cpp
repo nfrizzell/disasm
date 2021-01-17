@@ -43,10 +43,10 @@ const std::map<AddrMethod, std::string> regString
 	{ AddrMethod::EFLAGS, "eflags" }
 };
 
-Translator::Translator(std::vector<Instruction> decodedInstrs)
+Translator::Translator(std::vector<Instruction> decodedInstrs, std::vector<byte> * section)
 {
 	this->decodedInstrs = decodedInstrs;
-
+	this->section = section;
 }
 
 std::vector<std::string> Translator::TranslateToASM()
@@ -66,38 +66,83 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 {
 	auto line = std::stringstream();
 
-	std::string mnemonic = instr.attrib.intrinsic.mnemonic;
-
+	line << instr.attrib.intrinsic.mnemonic;
 
     if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
     {
-
+		std::string opStr = StringifyOperand(instr, instr.op1);
+		line << '\t' << opStr;
     }
 
     if (instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
     {
-
+		std::string opStr = StringifyOperand(instr, instr.op2);
+		line << "," << opStr;
     }
 
     if (instr.op3.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
     {
-
+		std::string opStr = StringifyOperand(instr, instr.op3);
+		line << "," << opStr;
     }
 
     if (instr.op4.attrib.intrinsic.type != OperandType::NOT_APPLICABLE)
     {
-
+		std::string opStr = StringifyOperand(instr, instr.op4);
+		line << "," << opStr;
     }
 
-	for (auto b : instr.encoded.encodedSequence)
+	line << '\n';
+	for (int i = instr.attrib.runtime.segmentByteOffset; i < instr.attrib.runtime.segmentByteOffset + instr.attrib.runtime.size; i++)
 	{
-		line << std::hex << (int)b << " ";
+		line << std::hex << (int)section->at(i) << " ";
 	}
 
-	line << '\n' << mnemonic << '\n';
-
-	std::cout << line.str() << '\n';
+	std::cout << line.str() << "\n\n";
 	return line.str();
+}
+
+std::string Translator::StringifyOperand(const Instruction &instr, const Operand &op)
+{
+	if (op.attrib.runtime.encoding == Operand::IMMD)
+	{
+		std::stringstream immdStrStrm;
+		immdStrStrm << "0x" << std::hex << instr.encoded.immd;
+		return immdStrStrm.str();
+	}
+
+	else if (op.attrib.runtime.encoding == Operand::OPCODE_REGISTER)
+	{
+		AddrMethod encodedReg = ModRMRegisterEncoding32.at(instr.encoded.opcode.primary & 0b00000111);
+		return regString.at(encodedReg);
+	}
+
+	else if (op.attrib.runtime.encoding == Operand::MODRM_REGISTER_REGBITS)
+	{
+		AddrMethod reg = ModRMRegisterEncoding32.at(instr.encoded.modrm.regOpBits);
+		return regString.at(reg);
+	}
+
+	else if (op.attrib.runtime.encoding == Operand::MODRM_REGISTER_RMBITS)
+	{
+		AddrMethod reg = ModRMRegisterEncoding32.at(instr.encoded.modrm.rmBits);
+		return regString.at(reg);
+	}
+
+	else if (op.attrib.runtime.encoding == Operand::MODRM_REGISTER_WITH_DISP)
+	{
+
+	}
+
+	else if (op.attrib.runtime.encoding == Operand::MODRM_REGISTER_SCALED)
+	{
+
+	}
+
+	else if (op.attrib.runtime.encoding == Operand::MODRM_REGISTER_SCALED_WITH_DISP)
+	{
+
+	}
 }
 
 };

@@ -51,8 +51,6 @@ unsigned int LinearDecoder::ByteOffset()
 
 bool __attribute__((warn_unused_result)) LinearDecoder::NextByte()
 {
-	currentInstr.encoded.encodedSequence.push_back(currentByte);
-
 	if (byteOffset + 1 < section->size())
 	{
 		byteOffset++;
@@ -63,7 +61,7 @@ bool __attribute__((warn_unused_result)) LinearDecoder::NextByte()
 	return false;
 }
 
-bool LinearDecoder::ReverseByte()
+bool __attribute__((warn_unused_result)) LinearDecoder::ReverseByte()
 {
 	if (byteOffset > 0)
 	{
@@ -83,7 +81,9 @@ void LinearDecoder::NextInstruction()
 	
 void LinearDecoder::ChangeState(funcptr newState)
 {
+	/*
 	const int loopMax = 100; // Abritrary limit on same-state loops
+
 	if (&state == &newState)
 	{
 		stateLoopCounter++;
@@ -102,7 +102,7 @@ void LinearDecoder::ChangeState(funcptr newState)
 		error += '\n';
 		throw std::runtime_error(error);
 	}	
-
+	*/
 	state = newState;		
 }
 
@@ -210,7 +210,11 @@ void Opcode(LinearDecoder * context, Instruction &instr)
 
 			else
 			{
-				context->ReverseByte();
+				if(!context->ReverseByte())
+				{
+					context->ChangeState(MethodError);
+					return;
+				}
 			}
 		}
 
@@ -241,6 +245,7 @@ void Operands(LinearDecoder * context, Instruction &instr)
 	// If the instruction has a first operand that hasn't been read yet
     if (instr.op1.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && !instr.attrib.flags.op1Read)
 	{
+		instr.activeOperand = &instr.op1;
         context->ChangeState(addrMethodHandler.at(instr.op1.attrib.intrinsic.addrMethod));
 		instr.attrib.flags.op1Read = true;
 	}
@@ -248,6 +253,7 @@ void Operands(LinearDecoder * context, Instruction &instr)
 	// If the instruction has a second operand and the first has already been read
     else if (instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE && instr.attrib.flags.op1Read && !instr.attrib.flags.op2Read)
 	{
+		instr.activeOperand = &instr.op2;
         context->ChangeState(addrMethodHandler.at(instr.op2.attrib.intrinsic.addrMethod));
 		instr.attrib.flags.op2Read = true;
 	}
@@ -337,7 +343,6 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 {
 	if (!instr.attrib.flags.modRMRead)
 	{
-
 		// Get the ModRM byte
 		if (!context->NextByte())
 		{
@@ -376,6 +381,37 @@ void MethodE(LinearDecoder * context, Instruction &instr)
 		}
 
 		instr.attrib.flags.dispRead = true;
+	}
+
+	if (instr.attrib.flags.hasDisplacement)
+	{
+		if (instr.attrib.flags.hasSIB)
+		{
+			instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::MODRM_REGISTER_SCALED_WITH_DISP;
+		}
+		else
+		{
+			instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::MODRM_REGISTER_WITH_DISP;
+		}
+	}
+
+	else
+	{
+		if (instr.attrib.flags.hasSIB)
+		{
+			instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::MODRM_REGISTER_SCALED;
+		}
+		else
+		{
+			if (instr.encoded.opcode.extension != INVALID || (instr.activeOperand == &instr.op1 && instr.op2.attrib.intrinsic.type != OperandType::NOT_APPLICABLE))
+			{
+				instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::MODRM_REGISTER_RMBITS;
+			}
+			else
+			{
+				instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::MODRM_REGISTER_REGBITS;
+			}
+		}
 	}
 
 	context->ChangeState(Operands);
@@ -403,33 +439,7 @@ void MethodG(LinearDecoder * context, Instruction &instr)
 		instr.InterpretModRMByte(modrmByte);
 	}
 
-	if (instr.attrib.flags.hasSIB && !instr.attrib.flags.sibRead)
-	{
-		// Get SIB byte
-		if (!context->NextByte())
-		{
-			context->ChangeState(EndOfSegment); 
-			return;
-		}
-		
-		byte sibByte = context->CurrentByte();
-		instr.InterpretSIBByte(sibByte);
-	}
-
-	if (instr.attrib.flags.hasDisplacement && !instr.attrib.flags.dispRead)
-	{
-		for (int i = 0; i < instr.attrib.runtime.displacementSize; i++)
-		{
-			if (!context->NextByte())
-			{
-				context->ChangeState(EndOfSegment); 
-				return;
-			}
-
-			instr.encoded.disp += context->CurrentByte();
-		}
-		instr.attrib.flags.dispRead = true;
-	}
+	instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::MODRM_REGISTER_REGBITS;
 
 	context->ChangeState(Operands);
 }
@@ -471,6 +481,8 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 
 		instr.encoded.immd += (context->CurrentByte() << (8*i));
 	}
+
+	instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::IMMD;
 	
 	context->ChangeState(Operands);
 }
@@ -478,33 +490,30 @@ void MethodI(LinearDecoder * context, Instruction &instr)
 // This one is messy, I need to come back and see if it can be fixed later
 void MethodJ(LinearDecoder * context, Instruction &instr)
 {
+	int immdSize;
 	// Behaves differently than the others
-	if (instr.attrib.intrinsic.mnemonic == "CALL")
+	if (instr.attrib.intrinsic.mnemonic == "call")
 	{
-		for (int i = 0; i < 4; i++)
-		{
-			if (!context->NextByte())
-			{
-				context->ChangeState(EndOfSegment);
-				return;
-			}
-
-			instr.attrib.runtime.displacementSize = 4;
-			instr.encoded.disp += context->CurrentByte();
-		}
+		immdSize = 4;
 	}
 
 	else
+	{
+		immdSize = 1;
+	}
+
+	for (int i = 0; i < immdSize; i++)
 	{
 		if (!context->NextByte())
 		{
 			context->ChangeState(EndOfSegment);
 			return;
 		}
-		instr.attrib.runtime.displacementSize = 1;
-		instr.encoded.disp = context->CurrentByte();
+
+		instr.encoded.immd += (context->CurrentByte() << (8*i));
 	}
-	
+
+	instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::IMMD;
 	context->ChangeState(Operands);
 }
 
@@ -588,8 +597,7 @@ void MethodY(LinearDecoder * context, Instruction &instr)
 
 void MethodZ(LinearDecoder * context, Instruction &instr)
 {
-	uint8_t relevantOpcodeSection = instr.encoded.opcode.primary & 0b00000111;
-	AddrMethod encodedReg = ModRMRegisterEncoding32.at(relevantOpcodeSection);
+	instr.activeOperand->attrib.runtime.encoding = Operand::Encoding::OPCODE_REGISTER;
 
 	context->ChangeState(Operands);
 }

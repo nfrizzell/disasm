@@ -104,7 +104,6 @@ void Instruction::InterpretModRMByte(const byte modrmByte)
     // the new information
 	if (encoded.opcode.extension != INVALID)
 	{
-
 		encoded.opcode.extension = encoded.modrm.regOpBits;
 		auto reference = instrReference.GetReference(encoded.opcode);
 		UpdateAttributes(reference);

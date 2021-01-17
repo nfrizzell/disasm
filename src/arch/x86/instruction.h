@@ -68,8 +68,13 @@ public:
     enum Encoding
     {
         NOT_APPLICABLE = INVALID,
-        REGISTER = 0,
-        IMMD = 1
+		IMMD = 0,
+		OPCODE_REGISTER,
+		MODRM_REGISTER_REGBITS,
+		MODRM_REGISTER_RMBITS, // When the REG and RM fields of the ModRM byte are flipped
+		MODRM_REGISTER_WITH_DISP,
+		MODRM_REGISTER_SCALED,
+		MODRM_REGISTER_SCALED_WITH_DISP
     };
 
 	struct OperandAttributes
@@ -131,6 +136,7 @@ public:
 			uint8_t prefixCount {}; // Number of prefixes attached to the instruction
 			uint8_t opcodeLength {}; // Not including mandatory prefix
 			uint8_t displacementSize {}; // Size of displacement in bytes  
+
 		} runtime {};
 
 		struct Flags
@@ -156,7 +162,6 @@ public:
 	struct EncodedData
 	// The actual encoded byte data of each instruction
 	{
-		std::vector<byte> encodedSequence {};
 		std::array<byte, 4> prefix {};
 		Opcode opcode {};
 
@@ -184,6 +189,8 @@ public:
     Operand op2 {};
     Operand op3 {};
     Operand op4 {};
+
+	Operand * activeOperand;
 	
 	void InterpretModRMByte(const byte modrmByte);
 	void InterpretSIBByte(const byte sibByte);
