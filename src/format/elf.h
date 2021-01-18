@@ -13,6 +13,7 @@
 class FormatELF : public Format
 {
 public:
+	// Decides whether to initialize 32-bit or 64-bit
 	static std::unique_ptr<FormatELF> NewFormatELF(const std::vector<byte> * binDump);
 	static bool IsFormat(const std::vector<byte> * binDump);
 	void LoadMetadata(Metadata &metadata);

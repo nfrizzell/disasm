@@ -285,7 +285,11 @@ void x86CSVParse(InstructionReference &instrReference)
 		if (instrReference.count(instr.encoded.opcode) == 0)
 		{
 			auto opkey {instr.encoded.opcode};
-			instrReference.Emplace(opkey, instr);
+			// Only support x86 instructions until I implement x64 support
+			if (!instr.attrib.intrinsic.x64Exclusive)
+			{
+				instrReference.Emplace(opkey, instr);
+			}
 		}
 	}
 }

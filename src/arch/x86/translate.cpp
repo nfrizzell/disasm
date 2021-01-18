@@ -100,7 +100,7 @@ std::string Translator::StringifyInstruction(const Instruction &instr)
 		line << "," << opStr;
     }
 
-	std::cout << line.str() << "\n\n";
+	std::cout << line.str() << "\n";
 	return line.str();
 }
 
@@ -116,9 +116,9 @@ std::string Translator::StringifyOperand(const Instruction &instr, const Operand
 	if (op.attrib.runtime.encoding == Operand::RELATIVE_DISPLACEMENT)
 	{
 		std::stringstream addrStrStrm;
-		int relativeAddress = section->at(instr.attrib.runtime.segmentByteOffset + instr.attrib.runtime.size);
+		int relativeDisplacement = instr.encoded.immd;
 
-		addrStrStrm << "<0x" << std::hex << relativeAddress << " + relative address>";
+		addrStrStrm << "<0x" << std::hex << relativeDisplacement << " + relative address>";
 		return addrStrStrm.str();
 	}
 
