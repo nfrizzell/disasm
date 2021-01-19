@@ -9,7 +9,9 @@
 
 struct Segment
 {
-	std::map<std::string, std::vector<byte>> * seg;
+	std::map<std::string, std::vector<byte>> * seg {};
+
+	Segment() {seg = new std::map<std::string, std::vector<byte>>();}
 };
 
 class Format

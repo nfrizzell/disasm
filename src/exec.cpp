@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 
 #include "exec.h"
 
@@ -32,7 +33,8 @@ std::vector<byte> * Executable::PeekFile(std::string path)
 	std::ifstream file(path, std::ios::binary | std::ios::ate);
 	if (file.fail())
 	{
-		throw std::runtime_error("File not found");
+		std::cout << "ERROR: File not found." << '\n';
+		exit(EXIT_FAILURE);
 	}
 
 	std::size_t peekSize = file.tellg();
@@ -56,7 +58,8 @@ std::vector<byte> * Executable::LoadExecutable(std::string path)
 	std::size_t fileSize = file.tellg();
 	if (file.fail())
 	{
-		throw std::runtime_error("File not found");
+		std::cout << "ERROR: File not found." << '\n';
+		exit(EXIT_FAILURE);
 	}
 
 	file.seekg(0);

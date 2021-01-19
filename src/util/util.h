@@ -5,6 +5,7 @@
 class ByteSequence
 {
 public:
+	unsigned long offset;
 	ByteSequence(const std::vector<byte> * binDump, unsigned long long offset, EndType endianness = EndType::LSB);
 
 	template <typename T>
@@ -29,8 +30,10 @@ public:
 		return ret;
 	}
 
+	std::string ReadString(int size);
+
 private:
 	EndType endianness;	
 	const std::vector<byte> * binDump;
-	unsigned long offset;
+
 };

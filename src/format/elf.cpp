@@ -93,7 +93,6 @@ Segment FormatELF::GetCodeSegment()
 {
 	Segment segment {};
 	const std::vector<std::string> id = {".plt", ".plt.got", ".init", ".text", ".fini"};
-	segment.seg = new std::map<std::string, std::vector<byte>>;
 
 	auto sstOff = sectionHeaders[elfHeader.e_shstrndx].sh_offset; // Section name string table
 	for (auto sh : sectionHeaders)

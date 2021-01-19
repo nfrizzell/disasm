@@ -154,6 +154,8 @@ std::string Translator::StringifyOperand(const Instruction &instr, const Operand
 	{
 
 	}
+
+	return "";
 }
 
 };

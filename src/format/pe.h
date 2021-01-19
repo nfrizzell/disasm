@@ -19,6 +19,20 @@ struct COFFHeader
 	uint16_t characteristicFlags;
 };
 
+struct SectionHeader
+{
+	std::string name;
+	uint32_t virtualSize;
+	uint32_t virtualAddress;
+	uint32_t rawSize;
+	uint32_t rawDataPointer;
+	uint32_t relocationPointer; // Unused
+	uint32_t lineNumberPointer; // Unused
+	uint16_t numRelocations; // Unused
+	uint16_t numLineNumbers; // Unused
+	uint32_t characteristicFlags;
+};
+
 class FormatPE : public Format
 {
 public:
@@ -28,8 +42,10 @@ public:
 	void LoadMetadata(Metadata &metadata);
 	Segment GetCodeSegment();
 private:
-	void ParseBinDump();
-	void LoadCOFFHeader();
-
 	COFFHeader coffHeader {};
+	std::vector<SectionHeader> sectionHeaders {};
+
+	void ParseBinDump();
+	int LoadCOFFHeader();
+	void LoadSectionHeaders(int offset);
 };

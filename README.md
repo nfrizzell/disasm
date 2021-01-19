@@ -7,7 +7,7 @@ This is a work-in-progress disassembler. Currently disassembly of x86 executable
 
 #### File format support:
 - [x] ELF
-- [ ] PE
+- [x] PE
 
 #### Instruction set support:
 - [x] x86
